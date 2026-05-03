@@ -173,8 +173,71 @@ main {
   font-weight: 700;
 }
 
-/* ========== 提供者 ========== */
-.provider p {
+/* ========== 詳細テーブル ========== */
+.detail-box {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  overflow-x: auto;
+}
+
+.detail-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.detail-table th,
+.detail-table td {
+  padding: 0.7rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 0.95rem;
+}
+
+.detail-table th {
+  color: #1e3a5f;
+  font-weight: 600;
+  white-space: nowrap;
+  width: 140px;
+}
+
+.detail-table td {
+  color: #374151;
+}
+
+.detail-table td a {
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.detail-table td a:hover {
+  text-decoration: underline;
+}
+
+.detail-table tr:last-child th,
+.detail-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* ========== 技術構成 ========== */
+.tech-list {
+  list-style: none;
+  padding: 0;
+}
+
+.tech-list li {
+  background: #fff;
+  border-radius: 8px;
+  padding: 0.7rem 1.2rem;
+  margin-bottom: 0.5rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  font-size: 0.95rem;
+  color: #374151;
+}
+
+/* ========== 提供者詳細 ========== */
+.provider-detail p {
   font-size: 1rem;
 }
 
@@ -204,6 +267,67 @@ main {
   margin-top: 2rem;
   color: #9ca3af;
   font-size: 0.9rem;
+}
+
+/* ========== FAQ ========== */
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.faq-item {
+  background: #fff;
+  border-radius: 8px;
+  padding: 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.faq-item summary {
+  padding: 0.9rem 1.2rem;
+  font-weight: 600;
+  color: #1e3a5f;
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.faq-item summary::before {
+  content: 'Q.';
+  color: #fbbf24;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.faq-item summary::after {
+  content: '\25BC';
+  margin-left: auto;
+  font-size: 0.7rem;
+  color: #9ca3af;
+  transition: transform 0.2s ease;
+}
+
+.faq-item[open] summary::after {
+  transform: rotate(180deg);
+}
+
+.faq-item p {
+  padding: 0 1.2rem 1rem 1.2rem;
+  color: #374151;
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+
+.faq-item p a {
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.faq-item p a:hover {
+  text-decoration: underline;
 }
 
 /* ========== フッター ========== */
