@@ -1,0 +1,264 @@
+/* つけトク サイト - アプリ風デザイン */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Noto Sans JP', Arial, sans-serif;
+  line-height: 1.8;
+  color: #1a1a2e;
+  background: #f8f9fa;
+}
+
+/* ========== ヘッダー ========== */
+header {
+  background: linear-gradient(135deg, #1e3a5f 0%, #0f1f3d 100%);
+  color: #fff;
+  text-align: center;
+  padding: 3rem 1.5rem;
+}
+
+.header-inner {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.app-title {
+  font-size: 2.8rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+  color: #fbbf24;
+}
+
+.app-tagline {
+  font-size: 1.1rem;
+  color: #cbd5e1;
+  font-weight: 400;
+}
+
+/* ========== メイン ========== */
+main {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.section {
+  margin-bottom: 2.5rem;
+}
+
+.section h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #1e3a5f;
+  margin-bottom: 1rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 3px solid #fbbf24;
+  display: inline-block;
+}
+
+.section p {
+  color: #374151;
+}
+
+/* ========== 機能カード ========== */
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.2rem;
+}
+
+.feature-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 20px rgba(30, 58, 95, 0.12);
+}
+
+.feature-icon {
+  font-size: 2rem;
+  margin-bottom: 0.6rem;
+}
+
+.feature-card h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1e3a5f;
+  margin-bottom: 0.4rem;
+}
+
+.feature-card p {
+  font-size: 0.9rem;
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+/* ========== 利用シーン ========== */
+.scene-list {
+  list-style: none;
+  padding: 0;
+}
+
+.scene-list li {
+  background: #fff;
+  border-radius: 8px;
+  padding: 0.8rem 1.2rem;
+  margin-bottom: 0.6rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.scene-emoji {
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+
+/* ========== 利用の流れ ========== */
+.steps-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.step {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.2rem 1.5rem;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  flex: 1;
+  min-width: 150px;
+  max-width: 220px;
+}
+
+.step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.step-text {
+  font-size: 0.9rem;
+  color: #374151;
+  font-weight: 500;
+}
+
+.step-arrow {
+  color: #fbbf24;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+/* ========== 提供者 ========== */
+.provider p {
+  font-size: 1rem;
+}
+
+/* ========== プライバシーポリシー ========== */
+.policy h2 {
+  display: block;
+  margin-top: 1.8rem;
+}
+
+.policy ul {
+  margin: 0.6rem 0 0.6rem 1.5rem;
+  color: #374151;
+}
+
+.policy ul li {
+  margin-bottom: 0.3rem;
+}
+
+.contact-info {
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 1rem 1.2rem;
+  margin: 0.5rem 0;
+}
+
+.policy-date {
+  margin-top: 2rem;
+  color: #9ca3af;
+  font-size: 0.9rem;
+}
+
+/* ========== フッター ========== */
+footer {
+  background: #0f1f3d;
+  color: #94a3b8;
+  text-align: center;
+  padding: 1.5rem;
+  margin-top: 2rem;
+}
+
+.footer-inner a {
+  color: #fbbf24;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.footer-inner a:hover {
+  text-decoration: underline;
+}
+
+.copyright {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+/* ========== レスポンシブ（モバイル） ========== */
+@media (max-width: 600px) {
+  header {
+    padding: 2rem 1rem;
+  }
+
+  .app-title {
+    font-size: 2rem;
+  }
+
+  .feature-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .steps-container {
+    flex-direction: column;
+  }
+
+  .step {
+    max-width: 100%;
+  }
+
+  .step-arrow {
+    transform: rotate(90deg);
+  }
+
+  main {
+    padding: 1.5rem 1rem;
+  }
+}

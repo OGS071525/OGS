@@ -1,0 +1,146 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&display=swap');
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Noto Sans JP', sans-serif;
+  color: #1f2937;
+  background: radial-gradient(circle at top right, #e0f2fe 0%, #f8fafc 45%, #eef2ff 100%);
+  min-height: 100vh;
+}
+
+.hero {
+  background: linear-gradient(120deg, #0f172a 0%, #1e3a8a 55%, #1d4ed8 100%);
+  color: #fff;
+  padding: 56px 20px;
+}
+
+.hero-inner {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.label {
+  display: inline-block;
+  padding: 4px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 999px;
+  margin-bottom: 10px;
+  font-size: 12px;
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: 42px;
+}
+
+.lead {
+  margin-top: 12px;
+  max-width: 700px;
+  color: #dbeafe;
+}
+
+main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 28px 20px 44px;
+}
+
+h2 {
+  margin: 0 0 14px;
+  color: #0f172a;
+}
+
+.app-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.app-card {
+  background: #ffffff;
+  border: 1px solid #dbeafe;
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+}
+
+.app-card h3 {
+  margin: 4px 0 8px;
+}
+
+.app-icon {
+  font-size: 28px;
+}
+
+.app-card p {
+  margin: 0 0 14px;
+  line-height: 1.7;
+  color: #334155;
+}
+
+.card-links {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.card-links a {
+  text-decoration: none;
+  background: #1d4ed8;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.card-links a:hover {
+  background: #1e40af;
+}
+
+.placeholder {
+  border-style: dashed;
+}
+
+.howto {
+  margin-top: 26px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 18px;
+}
+
+.howto ol {
+  margin: 0;
+  padding-left: 20px;
+  line-height: 1.9;
+}
+
+footer {
+  border-top: 1px solid #e2e8f0;
+  text-align: center;
+  padding: 20px;
+  color: #64748b;
+}
+
+footer a {
+  color: #1d4ed8;
+}
+
+.copy {
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+@media (max-width: 640px) {
+  .hero h1 {
+    font-size: 32px;
+  }
+
+  .lead {
+    font-size: 14px;
+  }
+}

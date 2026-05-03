@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OGS Apps Portal</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <p class="label">OGS</p>
+      <h1>アプリポータル</h1>
+      <p class="lead">OGSが提供するアプリを1つの場所にまとめた入口ページです。</p>
+    </div>
+  </header>
+
+  <main>
+    <section class="apps">
+      <h2>公開中のアプリ</h2>
+      <div class="app-grid">
+        <article class="app-card">
+          <div class="app-icon">💴</div>
+          <h3>つけトク</h3>
+          <p>LINEミニアプリ対応の割り勘・支出管理アプリ。グループ作成、履歴管理、メンバー招待に対応。</p>
+          <div class="card-links">
+            <a href="tsuketoku/index.html">概要ページを見る</a>
+            <a href="tsuketoku/privacy.html">プライバシーポリシー</a>
+          </div>
+        </article>
+
+        <article class="app-card placeholder">
+          <div class="app-icon">🚀</div>
+          <h3>次のアプリ</h3>
+          <p>この枠に今後のアプリを追加できます。フォルダを増やしてリンクを追加するだけで拡張可能です。</p>
+          <div class="card-links">
+            <a href="#" aria-disabled="true">準備中</a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="howto">
+      <h2>追加方法（運用サンプル）</h2>
+      <ol>
+        <li>リポジトリ直下に新しいアプリ用フォルダを作成</li>
+        <li>その中に index.html と style.css を配置</li>
+        <li>このトップページのカードを1つ追加してリンクを設定</li>
+      </ol>
+    </section>
+  </main>
+
+  <footer>
+    <p>お問い合わせ: <a href="mailto:info@ogs.jp">info@ogs.jp</a></p>
+    <p class="copy">&copy; 2026 OGS. All rights reserved.</p>
+  </footer>
+</body>
+</html>
