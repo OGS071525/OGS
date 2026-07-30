@@ -1,0 +1,12 @@
+/* 買いドキ！ テーマ（共通スタイルは ../assets/app.css） */
+:root {
+  --brand: #294785;
+  --brand-deep: #172e61;
+  --accent: #4ade80;
+  --accent-ink: #15803d;
+  --page-bg: #f6f8fc;
+  --link: #294785;
+  --footer-bg: #172e61;
+  --footer-text: #9fb0d4;
+  --soft: #eef2fa;
+}

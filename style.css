@@ -69,11 +69,22 @@ h2 {
 }
 
 .app-card h3 {
-  margin: 4px 0 8px;
+  margin: 4px 0 4px;
 }
 
 .app-icon {
   font-size: 28px;
+}
+
+.platform {
+  display: inline-block;
+  margin: 0 0 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #3730a3;
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 .app-card p {
@@ -99,6 +110,17 @@ h2 {
 
 .card-links a:hover {
   background: #1e40af;
+}
+
+/* 2つ目以降のリンクは控えめな見た目にする */
+.card-links a:not(:first-child) {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.card-links a:not(:first-child):hover {
+  background: #dbeafe;
 }
 
 .placeholder {

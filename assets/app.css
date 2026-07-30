@@ -1,0 +1,496 @@
+/* OGS アプリ紹介ページ 共通スタイル
+   配色は各アプリフォルダの style.css で :root 変数を上書きして切り替えます。 */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
+
+:root {
+  --brand: #1e3a5f;
+  --brand-deep: #0f1f3d;
+  --accent: #fbbf24;
+  --accent-ink: #1e3a5f;
+  --page-bg: #f8f9fa;
+  --text: #1a1a2e;
+  --body: #374151;
+  --muted: #6b7280;
+  --card: #ffffff;
+  --link: #2563eb;
+  --footer-bg: #0f1f3d;
+  --footer-text: #94a3b8;
+  --soft: #f1f5f9;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Noto Sans JP', Arial, sans-serif;
+  line-height: 1.8;
+  color: var(--text);
+  background: var(--page-bg);
+}
+
+/* ========== ヘッダー ========== */
+header {
+  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-deep) 100%);
+  color: #fff;
+  text-align: center;
+  padding: 3rem 1.5rem;
+}
+
+.header-inner {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.app-title {
+  font-size: 2.8rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+  color: var(--accent);
+}
+
+.app-tagline {
+  font-size: 1.1rem;
+  color: #cbd5e1;
+  font-weight: 400;
+}
+
+.breadcrumb {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.breadcrumb a {
+  color: var(--link);
+  text-decoration: none;
+}
+
+.breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+/* ========== メイン ========== */
+main {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.section {
+  margin-bottom: 2.5rem;
+}
+
+.section h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--brand);
+  margin-bottom: 1rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 3px solid var(--accent);
+  display: inline-block;
+}
+
+.section h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--brand);
+  margin: 1.4rem 0 0.4rem;
+}
+
+.section p {
+  color: var(--body);
+}
+
+.section p + p {
+  margin-top: 0.8rem;
+}
+
+/* ========== 機能カード ========== */
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.2rem;
+}
+
+.feature-card {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 20px rgba(30, 58, 95, 0.12);
+}
+
+.feature-icon {
+  font-size: 2rem;
+  margin-bottom: 0.6rem;
+}
+
+.feature-card h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--brand);
+  margin-bottom: 0.4rem;
+}
+
+.feature-card p {
+  font-size: 0.9rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+/* ========== 利用シーン ========== */
+.scene-list {
+  list-style: none;
+  padding: 0;
+}
+
+.scene-list li {
+  background: var(--card);
+  border-radius: 8px;
+  padding: 0.8rem 1.2rem;
+  margin-bottom: 0.6rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.scene-emoji {
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+
+/* ========== 利用の流れ ========== */
+.steps-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.step {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 1.2rem 1.5rem;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  flex: 1;
+  min-width: 150px;
+  max-width: 220px;
+}
+
+.step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, var(--brand), var(--brand-deep));
+  color: #fff;
+  border-radius: 50%;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.step-text {
+  font-size: 0.9rem;
+  color: var(--body);
+  font-weight: 500;
+}
+
+.step-arrow {
+  color: var(--accent);
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+/* ========== 詳細テーブル ========== */
+.detail-box {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  overflow-x: auto;
+}
+
+.detail-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.detail-table th,
+.detail-table td {
+  padding: 0.7rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 0.95rem;
+}
+
+.detail-table th {
+  color: var(--brand);
+  font-weight: 600;
+  white-space: nowrap;
+  width: 140px;
+}
+
+.detail-table td {
+  color: var(--body);
+}
+
+.detail-table td a {
+  color: var(--link);
+  text-decoration: none;
+}
+
+.detail-table td a:hover {
+  text-decoration: underline;
+}
+
+.detail-table tr:last-child th,
+.detail-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* ========== 技術構成・箇条書きカード ========== */
+.tech-list {
+  list-style: none;
+  padding: 0;
+}
+
+.tech-list li {
+  background: var(--card);
+  border-radius: 8px;
+  padding: 0.7rem 1.2rem;
+  margin-bottom: 0.5rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  font-size: 0.95rem;
+  color: var(--body);
+}
+
+/* ========== 注記ボックス ========== */
+.note {
+  background: var(--soft);
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+  padding: 1rem 1.2rem;
+  color: var(--body);
+  font-size: 0.95rem;
+}
+
+/* ========== 提供者詳細 ========== */
+.provider-detail p {
+  font-size: 1rem;
+}
+
+/* ========== プライバシーポリシー ========== */
+.policy h2 {
+  display: block;
+  margin-top: 1.8rem;
+}
+
+.policy ul,
+.policy ol {
+  margin: 0.6rem 0 0.6rem 1.5rem;
+  color: var(--body);
+}
+
+.policy ul li,
+.policy ol li {
+  margin-bottom: 0.3rem;
+}
+
+.policy a {
+  color: var(--link);
+}
+
+.contact-info {
+  background: var(--soft);
+  border-radius: 8px;
+  padding: 1rem 1.2rem;
+  margin: 0.5rem 0;
+}
+
+.policy-date {
+  margin-top: 2rem;
+  color: #9ca3af;
+  font-size: 0.9rem;
+}
+
+/* ========== プライバシー一覧表 ========== */
+.privacy-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--card);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  font-size: 0.92rem;
+}
+
+.privacy-table th,
+.privacy-table td {
+  padding: 0.7rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+  vertical-align: top;
+}
+
+.privacy-table thead th {
+  background: var(--soft);
+  color: var(--brand);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.privacy-table td {
+  color: var(--body);
+}
+
+.privacy-table tbody tr:last-child th,
+.privacy-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+/* ========== FAQ ========== */
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.faq-item {
+  background: var(--card);
+  border-radius: 8px;
+  padding: 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.faq-item summary {
+  padding: 0.9rem 1.2rem;
+  font-weight: 600;
+  color: var(--brand);
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.faq-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq-item summary::before {
+  content: 'Q.';
+  color: var(--accent-ink);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.faq-item summary::after {
+  content: '\25BC';
+  margin-left: auto;
+  font-size: 0.7rem;
+  color: #9ca3af;
+  transition: transform 0.2s ease;
+}
+
+.faq-item[open] summary::after {
+  transform: rotate(180deg);
+}
+
+.faq-item p {
+  padding: 0 1.2rem 1rem 1.2rem;
+  color: var(--body);
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+
+.faq-item p a {
+  color: var(--link);
+  text-decoration: none;
+}
+
+.faq-item p a:hover {
+  text-decoration: underline;
+}
+
+/* ========== フッター ========== */
+footer {
+  background: var(--footer-bg);
+  color: var(--footer-text);
+  text-align: center;
+  padding: 1.5rem;
+  margin-top: 2rem;
+}
+
+.footer-inner a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.footer-inner a:hover {
+  text-decoration: underline;
+}
+
+.copyright {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+/* ========== レスポンシブ（モバイル） ========== */
+@media (max-width: 600px) {
+  header {
+    padding: 2rem 1rem;
+  }
+
+  .app-title {
+    font-size: 2rem;
+  }
+
+  .feature-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .steps-container {
+    flex-direction: column;
+  }
+
+  .step {
+    max-width: 100%;
+  }
+
+  .step-arrow {
+    transform: rotate(90deg);
+  }
+
+  main {
+    padding: 1.5rem 1rem;
+  }
+
+  .breadcrumb {
+    padding: 1rem 1rem 0;
+  }
+}

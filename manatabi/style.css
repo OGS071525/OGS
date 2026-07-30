@@ -1,0 +1,19 @@
+/* まなたび テーマ（共通スタイルは ../assets/app.css） */
+:root {
+  --brand: #b45309;
+  --brand-deep: #7c2d12;
+  --accent: #ffd95e;
+  --accent-ink: #b45309;
+  --page-bg: #fffdf7;
+  --text: #4a3f35;
+  --body: #5a4c40;
+  --muted: #9b8e80;
+  --link: #b45309;
+  --footer-bg: #4a3f35;
+  --footer-text: #d8cbbd;
+  --soft: #fff4c8;
+}
+
+.app-tagline {
+  color: #fff6e0;
+}

@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>つけトク - みんなで使える割り勘・支出管理アプリ</title>
+  <meta name="description" content="つけトクは、グループの支出をワンタップで記録して割り勘を管理できるiOSアプリ。支払う人はルーレット・じゃんけん・あみだくじのミニゲームで決められます。">
+  <link rel="stylesheet" href="../assets/app.css">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -15,29 +17,36 @@
   </div>
 </header>
 
+<nav class="breadcrumb"><a href="../index.html">OGS アプリポータル</a> ／ つけトク</nav>
+
 <main>
   <!-- サービス概要 -->
   <section class="section">
     <h2>つけトクとは？</h2>
     <p>
-      つけトクは、日々の支出をワンタップで記録し、グループでの割り勘をかんたんに管理できる<strong>LINEミニアプリ</strong>です。<br>
-      LINEの友達をグループに招待して、旅行・食事・日常の買い物など、あらゆるシーンでスマートにお金の管理ができます。
+      つけトクは、日々の支出をワンタップで記録し、グループでの割り勘をかんたんに管理できる<strong>iOSアプリ</strong>です。<br>
+      旅行・食事・日常の買い物など、あらゆるシーンでスマートにお金の管理ができます。
     </p>
     <p>
-      LINEアプリ内から直接起動するため、別途アプリのインストールは不要です。LINEアカウントをお持ちの方であれば、どなたでもすぐにご利用いただけます。
+      「誰が払う？」で迷ったときは、<strong>ルーレット・じゃんけん・あみだくじ</strong>のミニゲームで支払う人を決められます。
+      気まずくなりがちな精算の場面が、その場のちょっとした盛り上がりに変わります。
+    </p>
+    <p>
+      LINEアカウントと連携すれば、LINEの友だちをグループに招待して記録を共有できます。連携せずにゲストとして使い始めることもできます。
     </p>
   </section>
 
   <!-- サービス詳細 -->
   <section class="section">
-    <h2>サービスの詳細</h2>
+    <h2>アプリの詳細</h2>
     <div class="detail-box">
       <table class="detail-table">
-        <tr><th>サービス名</th><td>つけトク</td></tr>
-        <tr><th>サービス形態</th><td>LINEミニアプリ</td></tr>
-        <tr><th>対象ユーザー</th><td>LINEアカウントをお持ちの方（日本国内）</td></tr>
+        <tr><th>アプリ名</th><td>つけトク</td></tr>
+        <tr><th>提供形態</th><td>iOSアプリ（App Store）</td></tr>
+        <tr><th>対応端末</th><td>iPhone / iPad</td></tr>
+        <tr><th>対象ユーザー</th><td>友人・家族・同僚と割り勘や立て替えの精算をする方</td></tr>
         <tr><th>利用料金</th><td>基本無料（今後一部有料機能を追加予定）</td></tr>
-        <tr><th>対応端末</th><td>LINEアプリが動作するスマートフォン（iOS / Android）</td></tr>
+        <tr><th>アカウント登録</th><td>LINEアカウント連携（任意）／連携せずゲストとしても利用可</td></tr>
         <tr><th>提供開始</th><td>2026年（審査承認後に公開予定）</td></tr>
       </table>
     </div>
@@ -53,9 +62,19 @@
         <p>電卓UIで金額を入力し、ワンタップで支出を記録。メモも添えられます。</p>
       </div>
       <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h3>メモのクイック入力</h3>
+        <p>「🍻 飲み会」「🍽️ ごはん」「☕ カフェ」「🚕 タクシー」など、よく使うメモを選ぶだけで入力できます。</p>
+      </div>
+      <div class="feature-card">
         <div class="feature-icon">👥</div>
         <h3>割り勘管理</h3>
         <p>グループ内のメンバーを選んで割り勘を設定。誰がいくら負担するか、一目でわかります。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🧮</div>
+        <h3>合計サマリー</h3>
+        <p>グループの合計金額をまとめて表示。今どれだけ使っているかがすぐに確認できます。</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">📂</div>
@@ -68,14 +87,24 @@
         <p>過去の記録を一覧表示。編集・削除もかんたんに行えます。</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">🔗</div>
-        <h3>LINE友達招待</h3>
-        <p>LINEからワンタップで友達をグループに招待。面倒な登録は不要です。</p>
+        <div class="feature-icon">🎯</div>
+        <h3>ルーレット</h3>
+        <p>参加メンバーを並べて回すだけ。支払う人をその場でランダムに決められます。</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">🔔</div>
-        <h3>通知・リマインド</h3>
-        <p>プッシュ通知で記録忘れを防止。習慣化をサポートします。</p>
+        <div class="feature-icon">✊</div>
+        <h3>じゃんけん対戦</h3>
+        <p>グー・チョキ・パーの勝ち抜きで支払う人を決定。ゲスト参加者を加えることもできます。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🪜</div>
+        <h3>あみだくじ</h3>
+        <p>定番のあみだくじで、線をたどるアニメーションつき。結果が出るまでのドキドキも楽しめます。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔗</div>
+        <h3>LINE友だち招待</h3>
+        <p>LINEアカウントを連携すると、ワンタップで友だちをグループに招待できます。</p>
       </div>
     </div>
   </section>
@@ -86,6 +115,7 @@
     <ul class="scene-list">
       <li><span class="scene-emoji">✈️</span>旅行中の費用を友達と割り勘</li>
       <li><span class="scene-emoji">🍽️</span>飲み会・食事代のかんたん精算</li>
+      <li><span class="scene-emoji">🎲</span>「今日は誰がおごる？」をゲームで決める</li>
       <li><span class="scene-emoji">🏠</span>家族やルームメイトとの生活費管理</li>
       <li><span class="scene-emoji">📝</span>日々の個人的な支出記録・家計簿</li>
     </ul>
@@ -97,7 +127,7 @@
     <div class="steps-container">
       <div class="step">
         <div class="step-number">1</div>
-        <div class="step-text">LINEからミニアプリを起動</div>
+        <div class="step-text">App Storeからインストールして起動</div>
       </div>
       <div class="step-arrow">▶</div>
       <div class="step">
@@ -117,10 +147,11 @@
     <h2>技術構成</h2>
     <p>つけトクは以下の技術を使用して開発・運用されています。</p>
     <ul class="tech-list">
-      <li>フロントエンド：LIFF（LINE Front-end Framework）を使用したWebアプリケーション</li>
-      <li>バックエンド：Microsoft Azure上で稼働するサーバーレスAPI</li>
+      <li>フロントエンド：Next.js / React によるアプリ画面</li>
+      <li>バックエンド：Microsoft Azure上で稼働するサーバーレスAPI（Azure Functions）</li>
       <li>データベース：Azure Cosmos DBによるデータ管理</li>
-      <li>認証：LINE Loginによるユーザー認証</li>
+      <li>認証：LINE Loginによるユーザー認証（連携しない場合はゲストとして利用）</li>
+      <li>ミニゲーム：すべて端末内で動作し、サーバーとの通信はありません</li>
       <li>通信：全通信をHTTPS（TLS）で暗号化</li>
     </ul>
   </section>
@@ -144,7 +175,7 @@
   <section class="section">
     <h2>事業者とサービスの関係</h2>
     <p>
-      LINEミニアプリ「つけトク」は、個人事業主 オージーエス（代表：大岸龍司）が企画・開発・運営するサービスです。
+      iOSアプリ「つけトク」は、個人事業主 オージーエス（代表：大岸龍司）が企画・開発・運営するサービスです。
       サービスの設計、開発、インフラ構築、ユーザーサポートのすべてをオージーエスが一貫して担当しています。
     </p>
     <p>
@@ -155,7 +186,9 @@
 
 <footer>
   <div class="footer-inner">
-    <a href="privacy.html">プライバシーポリシー</a> ｜ <a href="support.html">カスタマーサポート</a>
+    <a href="privacy.html">プライバシーポリシー</a> ｜ <a href="support.html">カスタマーサポート</a> ｜ <a href="../index.html">OGS アプリポータル</a>
+    <p class="copyright">&copy; 2026 オージーエス. All rights reserved.</p>
+  </div>
 </footer>
 
 </body>

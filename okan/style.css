@@ -1,0 +1,16 @@
+/* OKAN テーマ（共通スタイルは ../assets/app.css） */
+:root {
+  --brand: #ea580c;
+  --brand-deep: #b91c1c;
+  --accent: #fcd34d;
+  --accent-ink: #c2410c;
+  --page-bg: #fffaf3;
+  --link: #c2410c;
+  --footer-bg: #7c2d12;
+  --footer-text: #f5d6c1;
+  --soft: #fff2e0;
+}
+
+.app-tagline {
+  color: #ffe9d6;
+}
