@@ -58,6 +58,37 @@ header {
   font-weight: 400;
 }
 
+/* ========== App Store ダウンロードボタン ========== */
+.store-cta {
+  margin-top: 1.6rem;
+}
+
+.store-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--accent);
+  color: var(--accent-ink);
+  padding: 0.75rem 1.8rem;
+  border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.store-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.3);
+}
+
+.store-note {
+  margin-top: 0.6rem;
+  font-size: 0.85rem;
+  color: #cbd5e1;
+}
+
 .breadcrumb {
   max-width: 800px;
   margin: 0 auto;
