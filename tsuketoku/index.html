@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>つけトク - みんなで使える割り勘・支出管理アプリ</title>
-  <meta name="description" content="つけトクは、グループの支出をワンタップで記録して割り勘を管理できるiOSアプリ。支払う人はルーレット・じゃんけん・あみだくじのミニゲームで決められます。">
+  <title>つけトク - 立替をメモして自動精算するアプリ</title>
+  <meta name="description" content="つけトクは、飲み会や旅行の立替をメモ帳に書く感覚で記録して、誰が誰にいくら払えばよいかを自動計算するiOSアプリ。支払う人はルーレット・じゃんけん・あみだくじ・10秒ぴったりのゲームで決められます。">
   <link rel="stylesheet" href="../assets/app.css">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -13,7 +13,7 @@
 <header>
   <div class="header-inner">
     <h1 class="app-title">つけトク</h1>
-    <p class="app-tagline">記録するだけで、みんなの支出がスッキリ。</p>
+    <p class="app-tagline">書くだけで、「あとで払うね」がスッキリ終わる。</p>
     <p class="store-cta">
       <a class="store-button" href="https://apps.apple.com/jp/app/id6794844254" target="_blank" rel="noopener"> App Store でダウンロード</a>
     </p>
@@ -28,15 +28,17 @@
   <section class="section">
     <h2>つけトクとは？</h2>
     <p>
-      つけトクは、日々の支出をワンタップで記録し、グループでの割り勘をかんたんに管理できる<strong>iOSアプリ</strong>です。<br>
-      旅行・食事・日常の買い物など、あらゆるシーンでスマートにお金の管理ができます。
+      飲み会・旅行・ランチ。誰かが立て替えた「あとで払うね」を、そのままにしていませんか。<br>
+      つけトクは、<strong>メモ帳に書く感覚で立替を記録して、精算まで自動で計算してくれるiOSアプリ</strong>です。
+      金額とメモを入れるだけで、「誰が誰にいくら払えばいいか」をアプリが教えてくれます。
     </p>
     <p>
-      「誰が払う？」で迷ったときは、<strong>ルーレット・じゃんけん・あみだくじ</strong>のミニゲームで支払う人を決められます。
+      記録は<strong>「ノート」1冊ずつ</strong>にたまり、精算をおえるとその1冊が閉じて新しいノートが始まります。
+      イベントごとに1冊、という感覚でお使いいただけます。
+    </p>
+    <p>
+      「誰が払う？」で迷ったときは、<strong>ルーレット・じゃんけん・あみだくじ・10秒ぴったり</strong>のゲームで支払う人を決められます。
       気まずくなりがちな精算の場面が、その場のちょっとした盛り上がりに変わります。
-    </p>
-    <p>
-      LINEアカウントと連携すれば、LINEの友だちをグループに招待して記録を共有できます。連携せずにゲストとして使い始めることもできます。
     </p>
   </section>
 
@@ -48,9 +50,9 @@
         <tr><th>アプリ名</th><td>つけトク</td></tr>
         <tr><th>提供形態</th><td>iOSアプリ（App Store）</td></tr>
         <tr><th>対応端末</th><td>iPhone / iPad（iOS 17.0 以降）</td></tr>
-        <tr><th>対象ユーザー</th><td>友人・家族・同僚と割り勘や立て替えの精算をする方</td></tr>
-        <tr><th>利用料金</th><td>基本無料（今後一部有料機能を追加予定）</td></tr>
-        <tr><th>アカウント登録</th><td>LINEアカウント連携（任意）／連携せずゲストとしても利用可</td></tr>
+        <tr><th>対象ユーザー</th><td>友人・家族・同僚と立て替えの精算をする方</td></tr>
+        <tr><th>利用料金</th><td>無料（アプリ内課金・広告はありません）</td></tr>
+        <tr><th>アカウント登録</th><td>Apple ID でサインイン（メールアドレスは受け取りません）</td></tr>
         <tr><th>提供開始</th><td>2026年8月15日（App Storeにて公開中）</td></tr>
         <tr><th>ダウンロード</th><td><a href="https://apps.apple.com/jp/app/id6794844254" target="_blank" rel="noopener">App Store で「つけトク」を見る</a></td></tr>
       </table>
@@ -62,34 +64,44 @@
     <h2>主な機能</h2>
     <div class="feature-grid">
       <div class="feature-card">
+        <div class="feature-icon">📝</div>
+        <h3>メモ帳みたいに記録</h3>
+        <p>リングノートそのままの画面に「○○代 ○○円」と書くだけ。「飲み会」「ごはん」「カフェ」「タクシー」などのプリセットは、長押しで自由に編集・並べ替えできます。</p>
+      </div>
+      <div class="feature-card">
         <div class="feature-icon">💴</div>
-        <h3>ワンタップ記録</h3>
-        <p>電卓UIで金額を入力し、ワンタップで支出を記録。メモも添えられます。</p>
+        <h3>立替（たてかえ）の記録</h3>
+        <p>立て替えた人と、あとで払う人をえらぶだけ。1人あたりの金額はその場で自動計算され、人数が変わってもすぐ再計算されます。</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">⚡</div>
-        <h3>メモのクイック入力</h3>
-        <p>「🍻 飲み会」「🍽️ ごはん」「☕ カフェ」「🚕 タクシー」など、よく使うメモを選ぶだけで入力できます。</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">👥</div>
-        <h3>割り勘管理</h3>
-        <p>グループ内のメンバーを選んで割り勘を設定。誰がいくら負担するか、一目でわかります。</p>
+        <div class="feature-icon">📓</div>
+        <h3>ノート単位の管理</h3>
+        <p>記録は1冊のノートにたまり、精算をおえると新しい1冊が始まります。表紙の色で「編集中／精算まち／精算ずみ」がひと目でわかります。</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">🧮</div>
-        <h3>合計サマリー</h3>
-        <p>グループの合計金額をまとめて表示。今どれだけ使っているかがすぐに確認できます。</p>
+        <h3>精算は自動計算</h3>
+        <p>全員の貸し借りを合算して、送金の回数がいちばん少なくなる組み合わせを提示。受け取りは1件ずつチェックでき、その状態はメンバー全員に共有されます。</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">📂</div>
-        <h3>グループ管理</h3>
-        <p>旅行メンバー、同僚、家族など、シーンに合わせて複数グループを作成・切替できます。</p>
+        <div class="feature-icon">💬</div>
+        <h3>LINEで精算を送る</h3>
+        <p>「誰が誰にいくら」の文面を、そのままLINEのトークへ送れます。請求の連絡も、アプリの中で作ってそのまま共有できます。</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">📋</div>
-        <h3>履歴・編集</h3>
-        <p>過去の記録を一覧表示。編集・削除もかんたんに行えます。</p>
+        <div class="feature-icon">👥</div>
+        <h3>友達リスト</h3>
+        <p>QRコードを読み取って友達を追加し、ノートの参加者はそこから選びます。アプリを使っていない人も、名前だけで追加できます。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📖</div>
+        <h3>ページをめくって見返す</h3>
+        <p>左右スワイプでノートのページをめくるように、過去の記録を見返せます。あとから編集もでき、誰がいつ変更したかの編集履歴も残ります。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎤</div>
+        <h3>音声入力・電卓・レシート</h3>
+        <p>マイクに話すだけでメモと金額を入力。電卓で端数もその場で計算でき、撮ったレシートはメンバー全員で共有されます。</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">🎯</div>
@@ -99,7 +111,7 @@
       <div class="feature-card">
         <div class="feature-icon">✊</div>
         <h3>じゃんけん対戦</h3>
-        <p>グー・チョキ・パーの勝ち抜きで支払う人を決定。ゲスト参加者を加えることもできます。</p>
+        <p>グー・チョキ・パーの勝ち抜きで支払う人を決定。勝った人が支払う「男気モード」もあります。</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">🪜</div>
@@ -107,9 +119,9 @@
         <p>定番のあみだくじで、線をたどるアニメーションつき。結果が出るまでのドキドキも楽しめます。</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">🔗</div>
-        <h3>LINE友だち招待</h3>
-        <p>LINEアカウントを連携すると、ワンタップで友だちをグループに招待できます。</p>
+        <div class="feature-icon">⏱️</div>
+        <h3>10秒ぴったり</h3>
+        <p>画面に数字を出さず、体内時計だけで10秒を当てるゲーム。いちばんズレた人が支払い（男気モードではぴったりだった人が支払い）。</p>
       </div>
     </div>
   </section>
@@ -118,11 +130,11 @@
   <section class="section">
     <h2>利用シーン</h2>
     <ul class="scene-list">
-      <li><span class="scene-emoji">✈️</span>旅行中の費用を友達と割り勘</li>
-      <li><span class="scene-emoji">🍽️</span>飲み会・食事代のかんたん精算</li>
-      <li><span class="scene-emoji">🎲</span>「今日は誰がおごる？」をゲームで決める</li>
-      <li><span class="scene-emoji">🏠</span>家族やルームメイトとの生活費管理</li>
-      <li><span class="scene-emoji">📝</span>日々の個人的な支出記録・家計簿</li>
+      <li><span class="scene-emoji">🍽️</span>飲み会の幹事として、立て替えた分をまとめて精算したい</li>
+      <li><span class="scene-emoji">✈️</span>旅行や合宿の会計を、1冊のノートにまとめたい</li>
+      <li><span class="scene-emoji">🤝</span>友だち同士の立て替えが多く、貸し借りが分からなくなりがち</li>
+      <li><span class="scene-emoji">🎲</span>「今日は誰がおごる？」をゲームで決めたい</li>
+      <li><span class="scene-emoji">🏠</span>家族やパートナーと生活費を分けている</li>
     </ul>
   </section>
 
@@ -132,17 +144,17 @@
     <div class="steps-container">
       <div class="step">
         <div class="step-number">1</div>
-        <div class="step-text">App Storeからインストールして起動</div>
+        <div class="step-text">インストールして Apple ID でサインイン</div>
       </div>
       <div class="step-arrow">▶</div>
       <div class="step">
         <div class="step-number">2</div>
-        <div class="step-text">グループを作成し、メンバーを招待</div>
+        <div class="step-text">QRコードで友達を追加し、ノートの参加者をえらぶ</div>
       </div>
       <div class="step-arrow">▶</div>
       <div class="step">
         <div class="step-number">3</div>
-        <div class="step-text">金額・メモを入力してワンタップ記録</div>
+        <div class="step-text">立替を書きためて、精算をおえる</div>
       </div>
     </div>
   </section>
@@ -152,12 +164,26 @@
     <h2>技術構成</h2>
     <p>つけトクは以下の技術を使用して開発・運用されています。</p>
     <ul class="tech-list">
-      <li>フロントエンド：Next.js / React によるアプリ画面</li>
+      <li>アプリ本体：Swift / SwiftUI によるネイティブiOSアプリ</li>
       <li>バックエンド：Microsoft Azure上で稼働するサーバーレスAPI（Azure Functions）</li>
       <li>データベース：Azure Cosmos DBによるデータ管理</li>
-      <li>認証：LINE Loginによるユーザー認証（連携しない場合はゲストとして利用）</li>
-      <li>ミニゲーム：すべて端末内で動作し、サーバーとの通信はありません</li>
+      <li>画像の保管：Azure Blob Storage（レシート写真・プロフィール写真）</li>
+      <li>認証：Sign in with Apple（Apple ID）によるユーザー認証</li>
+      <li>音声入力：iOS標準の音声認識（Apple Speech フレームワーク）</li>
+      <li>ゲーム：すべて端末内で動作し、参加者や結果がサーバーへ送信されることはありません</li>
       <li>通信：全通信をHTTPS（TLS）で暗号化</li>
+    </ul>
+  </section>
+
+  <!-- 安心して使えます -->
+  <section class="section">
+    <h2>安心して使えます</h2>
+    <ul class="tech-list">
+      <li>Apple ID でサインインするため、機種変更やアプリの入れ直しのあとも同じ記録に戻れます</li>
+      <li>メールアドレスは受け取りません。表示名とアイコンはご自身で決められます</li>
+      <li>アプリ内で金銭のやり取りは行いません。決済情報も取得しません</li>
+      <li>ノートの記録を見られるのは、そのノートに参加しているメンバーだけです</li>
+      <li>アプリ内課金・広告はありません</li>
     </ul>
   </section>
 
