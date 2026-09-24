@@ -2,5 +2,5 @@
 // Function App をデプロイしたら、そのホスト名に置き換える（末尾は /api）。
 // scripts/setup-azure.ps1 を使うと自動で書き換わる。
 window.OGS_DASHBOARD_CONFIG = {
-  apiBase: "https://__DASHBOARD_FUNCTION_HOST__/api",
+  apiBase: "https://ogs-dashboard-fn.azurewebsites.net/api",
 };
