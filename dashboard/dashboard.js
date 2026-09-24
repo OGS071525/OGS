@@ -83,6 +83,56 @@
   }
 
   // ---------------------------------------------------------------------------
+  // 表示名（labels.js の辞書）。Azure 上の生の名前を「何のデータか」が分かる名前にする。
+  // 辞書に無ければ生の名前をそのまま返す。
+  // ---------------------------------------------------------------------------
+
+  const LABELS = window.OGS_DASHBOARD_LABELS || {};
+  const appLabels = (appKey) => (LABELS.apps && LABELS.apps[appKey]) || {};
+
+  function metricLabel(key) {
+    return (LABELS.metrics && LABELS.metrics[key]) || { name: key, desc: "" };
+  }
+
+  /** コンテナの表示名と説明。 */
+  function containerLabel(appKey, name) {
+    const entry = (appLabels(appKey).containers || {})[name];
+    if (!entry) return { name, desc: "", raw: name, mapped: false };
+    if (typeof entry === "string") return { name: entry, desc: "", raw: name, mapped: true };
+    return { name: entry.name || name, desc: entry.desc || "", raw: name, mapped: true };
+  }
+
+  /** 項目名（createdAt → 作成日時 など）。アプリごとの上書き → 共通辞書 → 生の名前。 */
+  function fieldLabel(appKey, field) {
+    const perApp = appLabels(appKey).fields || {};
+    return perApp[field] || (LABELS.fields || {})[field] || field;
+  }
+
+  /** 値の意味（type: "daily-quiz" → 今日のクイズ など）。 */
+  function valueLabel(appKey, field, value) {
+    const perApp = (appLabels(appKey).values || {})[field] || {};
+    const common = (LABELS.values || {})[field] || {};
+    const key = String(value);
+    return perApp[key] || common[key] || key;
+  }
+
+  function arrayLabel(appKey, field) {
+    const perApp = appLabels(appKey).arrays || {};
+    return perApp[field] || (LABELS.fields || {})[field] || field;
+  }
+
+  function blobLabel(appKey, name) {
+    const perApp = appLabels(appKey).blobs || {};
+    return perApp[name] || name;
+  }
+
+  /** 表示名の横に生の名前を小さく出す（辞書で変換したときだけ）。 */
+  function rawTag(raw, friendly) {
+    if (!raw || raw === friendly) return null;
+    return el("code", { class: "raw", text: raw, title: `Azure 上の名前: ${raw}` });
+  }
+
+  // ---------------------------------------------------------------------------
   // API
   // ---------------------------------------------------------------------------
 
@@ -239,17 +289,17 @@
     const healthy = apps.filter((a) => a.health && a.health.ok).length;
     const checked = apps.filter((a) => a.health).length;
     const items = [
-      ["登録データ（全コンテナ）", fmtNum(sum("documents")), "件"],
-      ["新規 直近7日", fmtNum(sum("new7d")), "件"],
-      ["新規 直近30日", fmtNum(sum("new30d")), "件"],
-      ["利用者（合計）", fmtNum(sum("users")), "人・端末"],
-      ["アクティブ 30日", fmtNum(sum("activeUsers30d")), "人・端末"],
-      ["Blob 容量", fmtBytes(sum("blobBytes")), `${fmtNum(sum("blobCount"))} ファイル`],
-      ["API 稼働", `${healthy} / ${checked}`, `${withServer.length} アプリにサーバーあり`],
+      ["登録データ（全アプリ合計）", fmtNum(sum("documents")), "件", "全アプリの Cosmos DB に保存されているデータの総数"],
+      [`${metricLabel("last7d").name}`, fmtNum(sum("new7d")), "件", metricLabel("last7d").desc],
+      [`${metricLabel("last30d").name}`, fmtNum(sum("new30d")), "件", metricLabel("last30d").desc],
+      [`${metricLabel("users").name}（合計）`, fmtNum(sum("users")), "人・端末", "各アプリの利用者数の合計。アプリをまたいだ名寄せはしていない"],
+      [metricLabel("active30d").name, fmtNum(sum("activeUsers30d")), "人・端末", metricLabel("active30d").desc],
+      ["保存ファイルの容量", fmtBytes(sum("blobBytes")), `${fmtNum(sum("blobCount"))} ファイル`, "写真・レシート・PDF など Blob Storage の合計（Functions の内部ファイルは除く）"],
+      [metricLabel("health").name, `${healthy} / ${checked}`, `${withServer.length} アプリにサーバーあり`, metricLabel("health").desc],
     ];
-    for (const [label, value, sub] of items) {
+    for (const [label, value, sub, desc] of items) {
       row.appendChild(
-        el("div", { class: "kpi" }, [
+        el("div", { class: "kpi", title: desc || "" }, [
           el("p", { class: "kpi-label", text: label }),
           el("p", { class: "kpi-value", text: value }),
           el("p", { class: "kpi-sub", text: sub }),
@@ -337,14 +387,14 @@
         "div",
         { class: "app-summary" },
         [
-          ["ドキュメント", fmtNum(s.documents)],
-          ["新規 7日", fmtNum(s.new7d)],
-          ["新規 30日", fmtNum(s.new30d)],
-          ["利用者", fmtNum(s.users)],
-          ["アクティブ 30日", fmtNum(s.activeUsers30d)],
-          ["Blob 容量", fmtBytes(s.blobBytes)],
-        ].map(([label, value]) =>
-          el("div", { class: "mini-stat" }, [el("p", { class: "kpi-label", text: label }), el("p", { class: "kpi-value", text: value })])
+          ["登録データ", fmtNum(s.documents), "このアプリの全コンテナの合計件数"],
+          [metricLabel("last7d").name, fmtNum(s.new7d), metricLabel("last7d").desc],
+          [metricLabel("last30d").name, fmtNum(s.new30d), metricLabel("last30d").desc],
+          [metricLabel("users").name, fmtNum(s.users), "利用者の台帳（users / Members など）があればその件数、無ければ利用者 ID の種類数"],
+          [metricLabel("active30d").name, fmtNum(s.activeUsers30d), metricLabel("active30d").desc],
+          ["保存ファイルの容量", fmtBytes(s.blobBytes), "写真・レシート・PDF などの合計サイズ"],
+        ].map(([label, value, desc]) =>
+          el("div", { class: "mini-stat", title: desc }, [el("p", { class: "kpi-label", text: label }), el("p", { class: "kpi-value", text: value })])
         )
       )
     );
@@ -362,7 +412,10 @@
     const frag = document.createDocumentFragment();
     const c = app.cosmos;
     frag.appendChild(
-      el("h3", { class: "subhead" }, ["Cosmos DB コンテナ", el("span", { class: "count", text: `${c.containers.length} 個` })])
+      el("h3", { class: "subhead" }, [
+        "保存データ（Cosmos DB）",
+        el("span", { class: "count", text: `${c.containers.length} 種類` }),
+      ])
     );
     if (c.error) frag.appendChild(el("div", { class: "error-box", text: `接続エラー: ${c.error}` }));
     if (c.containers.length === 0 && !c.error) frag.appendChild(el("p", { class: "empty", text: "コンテナがありません" }));
@@ -374,49 +427,62 @@
     return frag;
   }
 
-  function numBlock(value, label) {
-    return el("div", { class: "num" }, [el("b", { text: value }), el("span", { text: label })]);
+  function numBlock(value, label, desc) {
+    return el("div", { class: "num", title: desc || "" }, [el("b", { text: value }), el("span", { text: label })]);
   }
 
   function renderContainerCard(app, cont) {
+    const label = containerLabel(app.key, cont.name);
     const card = el("article", { class: "container-card" });
     card.appendChild(
       el("div", { class: "card-head" }, [
-        el("h4", { class: "card-title", text: cont.name }),
-        cont.partitionKey ? el("span", { class: "card-pk", text: `PK ${cont.partitionKey}` }) : null,
+        el("div", {}, [
+          el("h4", { class: "card-title" }, [label.name, " ", rawTag(label.raw, label.name)]),
+          label.desc ? el("p", { class: "card-desc", text: label.desc }) : null,
+        ]),
+        cont.partitionKey ? el("span", { class: "card-pk", text: `PK ${cont.partitionKey}`, title: "パーティションキー（Cosmos DB のデータ分割の軸）" }) : null,
       ])
     );
     if (cont.error) card.appendChild(el("div", { class: "error-box", text: cont.error }));
 
-    const nums = [numBlock(fmtNum(cont.total), "合計")];
+    const m = metricLabel;
+    const nums = [numBlock(fmtNum(cont.total), m("total").name, m("total").desc)];
     if (cont.timestampField) {
-      nums.push(numBlock(fmtNum(cont.last7d), "直近7日"));
-      nums.push(numBlock(fmtNum(cont.last30d), "直近30日"));
+      const tsName = fieldLabel(app.key, cont.timestampField);
+      nums.push(numBlock(fmtNum(cont.last7d), m("last7d").name, `${m("last7d").desc}（${tsName} で判定）`));
+      nums.push(numBlock(fmtNum(cont.last30d), m("last30d").name, `${m("last30d").desc}（${tsName} で判定）`));
     }
     if (cont.userField) {
-      nums.push(numBlock(fmtNum(cont.distinctUsers), `利用者 (${cont.userField})`));
-      if (cont.activeUsers30d !== undefined) nums.push(numBlock(fmtNum(cont.activeUsers30d), "アクティブ30日"));
+      const userName = fieldLabel(app.key, cont.userField);
+      nums.push(numBlock(fmtNum(cont.distinctUsers), m("users").name, `${userName}（${cont.userField}）の異なる値の数`));
+      if (cont.activeUsers30d !== undefined) nums.push(numBlock(fmtNum(cont.activeUsers30d), m("active30d").name, m("active30d").desc));
     }
     card.appendChild(el("div", { class: "card-numbers" }, nums));
 
     if (cont.daily && cont.daily.length) {
-      card.appendChild(barChart(cont.daily, `日別の新規件数（${cont.timestampField}）`));
+      card.appendChild(barChart(cont.daily, `日別の新規件数（${fieldLabel(app.key, cont.timestampField)} で集計）`));
     } else if (cont.total > 0) {
-      card.appendChild(el("p", { class: "hint", text: "日時フィールドが見つからないため推移は出せません" }));
+      card.appendChild(el("p", { class: "hint", text: "日時の項目が見つからないため推移は出せません" }));
     }
 
     for (const arr of cont.arrays || []) {
+      const arrName = arrayLabel(app.key, arr.field);
       card.appendChild(
-        el("div", { class: "card-numbers" }, [
-          numBlock(fmtNum(arr.total), `${arr.field}（配列要素の合計）`),
-          arr.timestampField ? numBlock(fmtNum(arr.last7d), "直近7日") : null,
-          arr.timestampField ? numBlock(fmtNum(arr.last30d), "直近30日") : null,
+        el("div", { class: "array-block" }, [
+          el("p", { class: "array-title" }, [`埋め込みデータ: ${arrName}`, " ", rawTag(arr.field, arrName)]),
+          el("div", { class: "card-numbers" }, [
+            numBlock(fmtNum(arr.total), m("arrayTotal").name, m("arrayTotal").desc),
+            arr.timestampField ? numBlock(fmtNum(arr.last7d), m("last7d").name, `${fieldLabel(app.key, arr.timestampField)} で判定`) : null,
+            arr.timestampField ? numBlock(fmtNum(arr.last30d), m("last30d").name, `${fieldLabel(app.key, arr.timestampField)} で判定`) : null,
+          ]),
         ])
       );
-      if (arr.daily && arr.daily.length) card.appendChild(barChart(arr.daily, `${arr.field} の日別件数（${arr.timestampField}）`));
+      if (arr.daily && arr.daily.length) {
+        card.appendChild(barChart(arr.daily, `${arrName} の日別件数（${fieldLabel(app.key, arr.timestampField)} で集計）`));
+      }
     }
 
-    for (const b of cont.breakdowns || []) card.appendChild(breakdownList(b));
+    for (const b of cont.breakdowns || []) card.appendChild(breakdownList(app.key, b));
 
     card.appendChild(
       el("div", { class: "card-actions" }, [
@@ -427,7 +493,7 @@
           disabled: cont.total === 0,
           onclick: () => openRecent(app, cont.name),
         }),
-        el("span", { class: "hint", text: `集計 RU ${Math.round(cont.requestCharge || 0)}` }),
+        el("span", { class: "hint", text: `${m("ru").name} ${Math.round(cont.requestCharge || 0)}`, title: m("ru").desc }),
       ])
     );
     return card;
@@ -437,16 +503,19 @@
   // 内訳（横棒）
   // ---------------------------------------------------------------------------
 
-  function breakdownList(b) {
+  function breakdownList(appKey, b) {
     const wrap = el("figure", { class: "breakdown" });
-    wrap.appendChild(el("figcaption", { class: "breakdown-title", text: `内訳: ${b.field}` }));
+    const fieldName = fieldLabel(appKey, b.field);
+    wrap.appendChild(el("figcaption", { class: "breakdown-title" }, [`内訳: ${fieldName}`, " ", rawTag(b.field, fieldName)]));
     const values = b.values || [];
     const max = values.reduce((m, v) => Math.max(m, v.count), 0) || 1;
     const shown = values.slice(0, 12);
     for (const v of shown) {
+      const friendly = v.key === "(未設定)" ? v.key : valueLabel(appKey, b.field, v.key);
+      const tip = friendly === v.key ? `${v.key}: ${fmtNum(v.count)} 件` : `${friendly}（${v.key}）: ${fmtNum(v.count)} 件`;
       wrap.appendChild(
-        el("div", { class: "breakdown-row", title: `${v.key}: ${fmtNum(v.count)} 件` }, [
-          el("span", { class: "breakdown-key", text: v.key }),
+        el("div", { class: "breakdown-row", title: tip }, [
+          el("span", { class: "breakdown-key", text: friendly }),
           el("div", { class: "breakdown-track" }, [el("div", { class: "breakdown-fill", style: `width:${(v.count / max) * 100}%` })]),
           el("span", { class: "breakdown-count", text: fmtNum(v.count) }),
         ])
@@ -587,42 +656,48 @@
     const user = b.containers.filter((c) => !c.system);
     const system = b.containers.filter((c) => c.system);
     frag.appendChild(
-      el("h3", { class: "subhead" }, [`Blob Storage（${b.accountName || "-"}）`, el("span", { class: "count", text: `${user.length} コンテナ` })])
+      el("h3", { class: "subhead" }, [
+        "保存ファイル（Blob Storage）",
+        el("span", { class: "count", text: `${user.length} 種類` }),
+        el("code", { class: "raw", text: b.accountName || "-", title: "ストレージアカウント名" }),
+      ])
     );
     if (b.error) frag.appendChild(el("div", { class: "error-box", text: `接続エラー: ${b.error}` }));
-    if (user.length === 0 && !b.error) frag.appendChild(el("p", { class: "empty", text: "アプリ用の Blob コンテナはありません" }));
-    if (user.length) frag.appendChild(blobTable(user));
+    if (user.length === 0 && !b.error) frag.appendChild(el("p", { class: "empty", text: "アプリのファイル保存領域はありません" }));
+    if (user.length) frag.appendChild(blobTable(app.key, user));
     if (system.length) {
       frag.appendChild(
         el("details", { class: "system-toggle" }, [
-          el("summary", { text: `Functions の内部コンテナ ${system.length} 個を表示` }),
-          blobTable(system),
+          el("summary", { text: `Functions 内部のファイル（デプロイ パッケージ・鍵など）${system.length} 種類を表示` }),
+          blobTable(app.key, system),
         ])
       );
     }
     return frag;
   }
 
-  function blobTable(containers) {
-    const rows = containers.map((c) =>
-      el("tr", { class: c.system ? "system" : "" }, [
-        el("td", {}, [el("code", { text: c.name })]),
+  function blobTable(appKey, containers) {
+    const m = metricLabel;
+    const rows = containers.map((c) => {
+      const friendly = c.system ? c.name : blobLabel(appKey, c.name);
+      return el("tr", { class: c.system ? "system" : "" }, [
+        el("td", {}, friendly === c.name ? [el("code", { text: c.name })] : [friendly, " ", rawTag(c.name, friendly)]),
         el("td", { class: "num", text: fmtNum(c.blobCount) + (c.truncated ? "+" : "") }),
         el("td", { class: "num", text: fmtBytes(c.totalBytes) }),
         el("td", { class: "num", text: fmtNum(c.modified30d) }),
         el("td", { text: fmtDateTime(c.lastModified) }),
         el("td", { text: c.error || "" }),
-      ])
-    );
+      ]);
+    });
     return el("div", { class: "table-wrap" }, [
       el("table", { class: "data-table" }, [
         el("thead", {}, [
           el("tr", {}, [
-            el("th", { text: "コンテナ" }),
-            el("th", { class: "num", text: "ファイル数" }),
-            el("th", { class: "num", text: "容量" }),
-            el("th", { class: "num", text: "30日以内の更新" }),
-            el("th", { text: "最終更新" }),
+            el("th", { text: "保存しているもの" }),
+            el("th", { class: "num", text: m("blobCount").name, title: m("blobCount").desc }),
+            el("th", { class: "num", text: m("blobBytes").name, title: m("blobBytes").desc }),
+            el("th", { class: "num", text: m("modified30d").name, title: m("modified30d").desc }),
+            el("th", { text: m("lastModified").name, title: m("lastModified").desc }),
             el("th", { text: "" }),
           ]),
         ]),
@@ -638,9 +713,13 @@
   let recentItems = [];
   let recentRaw = false;
 
+  let recentAppKey = "";
+
   async function openRecent(app, containerName) {
     const modal = $("recent-modal");
-    $("recent-title").textContent = `${app.name} / ${containerName} の直近データ`;
+    recentAppKey = app.key;
+    const label = containerLabel(app.key, containerName);
+    $("recent-title").textContent = `${app.name} / ${label.name}${label.mapped ? `（${containerName}）` : ""} の直近データ`;
     const body = $("recent-body");
     clear(body);
     body.appendChild(el("p", { class: "empty", text: "取得しています…" }));
@@ -682,13 +761,24 @@
       el(
         "tr",
         {},
-        columns.map((k) => el("td", { text: cellText(item[k]) }))
+        columns.map((k) => {
+          const v = item[k];
+          // 種類・状態などの値は辞書で意味に置き換える（元の値はツールチップ）
+          const friendly = typeof v === "string" || typeof v === "boolean" ? valueLabel(recentAppKey, k, v) : null;
+          const text = friendly !== null && friendly !== String(v) ? `${friendly}（${v}）` : cellText(v);
+          return el("td", { text });
+        })
       )
     );
     body.appendChild(
       el("div", { class: "table-wrap" }, [
         el("table", { class: "data-table" }, [
-          el("thead", {}, [el("tr", {}, columns.map((k) => el("th", { text: k })))]),
+          el("thead", {}, [
+            el("tr", {}, columns.map((k) => {
+              const friendly = fieldLabel(recentAppKey, k);
+              return el("th", { title: k }, friendly === k ? [k] : [friendly, " ", rawTag(k, friendly)]);
+            })),
+          ]),
           el("tbody", {}, rows),
         ]),
       ])
