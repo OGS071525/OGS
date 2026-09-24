@@ -189,6 +189,19 @@ footer a {
   font-size: 13px;
 }
 
+/* 管理者用ダッシュボードへの入口。目立たせない（ログインしないと何も見えない） */
+.admin-link {
+  margin-left: 10px;
+  color: #94a3b8;
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.admin-link:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
 @media (max-width: 640px) {
   .hero h1 {
     font-size: 32px;

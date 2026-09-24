@@ -1,0 +1,607 @@
+/* OGS 管理ダッシュボード
+   ポータル（../style.css）の配色を土台に、グラフ用のトークンを足している。
+   色は :root のトークンで定義し、ダークモードでは同じ役割の色を差し替える。 */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap');
+
+:root {
+  color-scheme: light;
+  --page-bg: #f4f6fb;
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --border: #dbe3f0;
+  --hairline: rgba(15, 23, 42, 0.10);
+  --text: #0f172a;
+  --text-2: #475569;
+  --muted: #7c8595;
+  --brand: #1d4ed8;
+  --brand-deep: #0f172a;
+  --brand-soft: #eff6ff;
+  --brand-soft-ink: #1e40af;
+  --focus: #60a5fa;
+
+  /* データ系列（dataviz 既定パレット・検証済み） */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-1-soft: #cde2fb;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+
+  /* 状態色（固定・系列には使わない） */
+  --good: #0ca30c;
+  --good-text: #006300;
+  --warning: #fab219;
+  --critical: #d03b3b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page-bg: #0d0f14;
+    --surface: #161a22;
+    --surface-2: #1c212b;
+    --border: #2a3140;
+    --hairline: rgba(255, 255, 255, 0.10);
+    --text: #f3f4f6;
+    --text-2: #c3c7d1;
+    --muted: #8b93a3;
+    --brand: #6da7ec;
+    --brand-deep: #0b1220;
+    --brand-soft: #1b2a45;
+    --brand-soft-ink: #b7d3f6;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --series-1-soft: #1c3d66;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --good-text: #0ca30c;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page-bg: #0d0f14;
+  --surface: #161a22;
+  --surface-2: #1c212b;
+  --border: #2a3140;
+  --hairline: rgba(255, 255, 255, 0.10);
+  --text: #f3f4f6;
+  --text-2: #c3c7d1;
+  --muted: #8b93a3;
+  --brand: #6da7ec;
+  --brand-deep: #0b1220;
+  --brand-soft: #1b2a45;
+  --brand-soft-ink: #b7d3f6;
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-1-soft: #1c3d66;
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --good-text: #0ca30c;
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; }
+
+body {
+  font-family: 'Noto Sans JP', system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--text);
+  background: var(--page-bg);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+[hidden] { display: none !important; }
+
+button, input { font: inherit; }
+
+/* ========== 上部バー ========== */
+.topbar {
+  background: linear-gradient(120deg, #0f172a 0%, #1e3a8a 55%, #1d4ed8 100%);
+  color: #fff;
+}
+
+.topbar-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.brand {
+  color: #fff;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-label {
+  display: inline-block;
+  padding: 2px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.status-text {
+  font-size: 12px;
+  color: #dbeafe;
+}
+
+/* ========== ボタン ========== */
+.btn {
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--brand);
+  color: #fff;
+  transition: background 0.15s ease;
+}
+
+.btn.primary { background: var(--brand-deep); }
+.btn.primary:hover { background: #1e293b; }
+.btn.wide { width: 100%; }
+.btn.small { padding: 5px 10px; font-size: 13px; }
+
+.btn.ghost {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: inherit;
+}
+
+.btn.ghost:hover { background: rgba(255, 255, 255, 0.22); }
+
+main .btn.ghost,
+.modal .btn.ghost {
+  background: var(--brand-soft);
+  border-color: var(--border);
+  color: var(--brand-soft-ink);
+}
+
+main .btn.ghost:hover,
+.modal .btn.ghost:hover { background: var(--border); }
+
+.btn:disabled { opacity: 0.6; cursor: progress; }
+
+.btn:focus-visible, input:focus-visible, .app-tab:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* ========== ログイン ========== */
+.login-view {
+  display: flex;
+  justify-content: center;
+  padding: 48px 16px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px 24px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.login-card h1 { margin: 0 0 6px; font-size: 22px; }
+
+.login-lead { margin: 0 0 18px; color: var(--text-2); font-size: 14px; }
+
+.field { display: block; margin-bottom: 14px; }
+.field span { display: block; font-size: 13px; color: var(--text-2); margin-bottom: 4px; }
+
+.field input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.form-error {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(208, 59, 59, 0.10);
+  color: var(--critical);
+  font-size: 14px;
+}
+
+.login-note { margin: 14px 0 0; font-size: 12px; color: var(--muted); }
+
+/* ========== ダッシュボード本体 ========== */
+.dashboard-view {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 16px 40px;
+}
+
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.kpi {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+
+.kpi-label { font-size: 12px; color: var(--text-2); margin: 0; }
+.kpi-value { font-size: 26px; font-weight: 700; margin: 2px 0 0; letter-spacing: -0.01em; }
+.kpi-sub { font-size: 12px; color: var(--muted); margin: 0; }
+
+.app-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.app-tab {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-2);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.app-tab[aria-selected="true"] {
+  background: var(--brand-deep);
+  border-color: var(--brand-deep);
+  color: #fff;
+}
+
+/* --- アプリ区画 --- */
+.app-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 18px;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.app-icon { font-size: 28px; line-height: 1; }
+.app-title { margin: 0; font-size: 20px; }
+.app-meta { font-size: 12px; color: var(--muted); margin: 0; }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--hairline);
+  color: var(--text-2);
+}
+
+.badge .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.badge.good .dot { background: var(--good); }
+.badge.good { color: var(--good-text); }
+.badge.bad .dot { background: var(--critical); }
+.badge.bad { color: var(--critical); }
+.badge.neutral .dot { background: var(--muted); }
+
+.app-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.mini-stat {
+  background: var(--surface-2);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.mini-stat .kpi-label { font-size: 11px; }
+.mini-stat .kpi-value { font-size: 20px; }
+
+.subhead {
+  margin: 18px 0 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.subhead .count { font-weight: 400; color: var(--muted); }
+
+.empty {
+  color: var(--muted);
+  font-size: 14px;
+  padding: 10px 0;
+}
+
+.error-box {
+  background: rgba(208, 59, 59, 0.08);
+  border: 1px solid rgba(208, 59, 59, 0.3);
+  color: var(--critical);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 13px;
+  margin: 6px 0;
+  word-break: break-all;
+}
+
+/* --- コンテナカード --- */
+.container-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
+}
+
+.container-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.card-title { margin: 0; font-size: 15px; font-weight: 700; word-break: break-all; }
+.card-pk { font-size: 11px; color: var(--muted); }
+
+.card-numbers {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.num { display: flex; flex-direction: column; }
+.num b { font-size: 20px; font-weight: 700; line-height: 1.2; }
+.num span { font-size: 11px; color: var(--muted); }
+
+.card-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.hint { font-size: 11px; color: var(--muted); }
+
+/* --- グラフ（<figure>） --- */
+.chart {
+  margin: 0;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  padding: 8px 10px 6px;
+}
+
+.chart-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.chart-title { font-size: 12px; color: var(--text-2); margin: 0; }
+
+.chart-toggle {
+  border: none;
+  background: none;
+  color: var(--brand);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+
+.chart .bar { fill: var(--series-1); }
+.chart .bar.zero { fill: var(--series-1-soft); }
+.chart .bar.hover { fill: var(--brand-deep); }
+.chart .gridline { stroke: var(--grid); stroke-width: 1; }
+.chart .baseline { stroke: var(--axis); stroke-width: 1; }
+.chart .tick { fill: var(--muted); font-size: 10px; font-family: inherit; font-variant-numeric: tabular-nums; }
+.chart .hit { fill: transparent; }
+
+.chart-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 4px; }
+.chart-table th, .chart-table td { padding: 3px 6px; border-bottom: 1px solid var(--hairline); text-align: left; }
+.chart-table td:last-child, .chart-table th:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* --- 内訳（横棒） --- */
+.breakdown { margin: 0; }
+.breakdown-title { font-size: 12px; color: var(--text-2); margin: 0 0 4px; }
+
+.breakdown-row {
+  display: grid;
+  grid-template-columns: minmax(70px, 38%) 1fr auto;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+  padding: 2px 0;
+}
+
+.breakdown-key { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.breakdown-track {
+  height: 8px;
+  background: var(--series-1-soft);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.breakdown-fill { height: 100%; background: var(--series-1); border-radius: 4px; }
+.breakdown-count { font-variant-numeric: tabular-nums; color: var(--text-2); }
+
+/* --- 表 --- */
+.table-wrap { overflow-x: auto; }
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.data-table th, .data-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--hairline);
+  text-align: left;
+  vertical-align: top;
+}
+
+.data-table th { color: var(--text-2); font-weight: 600; white-space: nowrap; background: var(--surface-2); }
+.data-table td.num, .data-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.data-table tr.system td { color: var(--muted); }
+.data-table td code { font-size: 12px; word-break: break-all; }
+
+details.system-toggle summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--brand);
+  margin: 6px 0;
+}
+
+.footnote {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 8px;
+}
+
+/* ========== ローディング ========== */
+.loading {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #fff;
+  z-index: 50;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 4px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ========== モーダル ========== */
+.modal { position: fixed; inset: 0; z-index: 60; }
+.modal-backdrop { position: absolute; inset: 0; background: rgba(15, 23, 42, 0.5); }
+
+.modal-panel {
+  position: absolute;
+  inset: 5vh 16px;
+  margin: 0 auto;
+  max-width: 1100px;
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.modal-header h2 { margin: 0; font-size: 17px; }
+.modal-actions { display: flex; gap: 6px; }
+.modal-note { margin: 0; font-size: 12px; color: var(--muted); }
+.modal-body { overflow: auto; flex: 1; }
+.modal-body pre { font-size: 12px; white-space: pre-wrap; word-break: break-all; margin: 0; }
+
+/* ========== ツールチップ ========== */
+.tooltip {
+  position: fixed;
+  z-index: 70;
+  pointer-events: none;
+  background: var(--brand-deep);
+  color: #fff;
+  font-size: 12px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  white-space: nowrap;
+  transform: translate(-50%, calc(-100% - 10px));
+}
+
+/* ========== フッター ========== */
+.site-footer {
+  border-top: 1px solid var(--border);
+  text-align: center;
+  padding: 18px 16px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.site-footer a { color: var(--brand); }
+.site-footer .copy { margin: 6px 0 0; }
+
+.app-meta, .card-title, .breakdown-key { overflow-wrap: anywhere; }
+
+@media (max-width: 640px) {
+  .kpi-value { font-size: 22px; }
+  .kpi-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .app-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .container-grid { grid-template-columns: minmax(0, 1fr); }
+  .container-card { min-width: 0; }
+  .app-section { padding: 14px; }
+  .modal-panel { inset: 2vh 8px; padding: 12px; }
+}
