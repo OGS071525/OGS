@@ -9,6 +9,11 @@
   const API = String(cfg.apiBase || "").replace(/\/+$/, "");
   const API_CONFIGURED = API && !API.includes("__DASHBOARD_FUNCTION_HOST__");
   const TOKEN_KEY = "ogs_dashboard_token";
+  const SESSION_EXPIRED_MESSAGE = "セッションが切れました。もう一度ログインしてください";
+  /** API が内訳で null / undefined の値に付けるキー（cosmosMetrics.ts の UNSET_KEY と対） */
+  const UNSET_KEY = "(未設定)";
+  /** 直近データの表で 1 セルに出す最大文字数 */
+  const CELL_MAX_CHARS = 80;
 
   const $ = (id) => document.getElementById(id);
   const nf = new Intl.NumberFormat("ja-JP");
@@ -102,10 +107,15 @@
     return { name: entry.name || name, desc: entry.desc || "", raw: name, mapped: true };
   }
 
-  /** 項目名（createdAt → 作成日時 など）。アプリごとの上書き → 共通辞書 → 生の名前。 */
+  /** アプリごとの辞書（section: fields / arrays）→ 共通の fields 辞書 → 生の名前。 */
+  function nameFrom(appKey, section, key) {
+    const perApp = appLabels(appKey)[section] || {};
+    return perApp[key] || (LABELS.fields || {})[key] || key;
+  }
+
+  /** 項目名（createdAt → 作成日時 など）。 */
   function fieldLabel(appKey, field) {
-    const perApp = appLabels(appKey).fields || {};
-    return perApp[field] || (LABELS.fields || {})[field] || field;
+    return nameFrom(appKey, "fields", field);
   }
 
   /** 値の意味（type: "daily-quiz" → 今日のクイズ など）。 */
@@ -116,9 +126,9 @@
     return perApp[key] || common[key] || key;
   }
 
+  /** 埋め込み配列の名前（histories → 立替・割り勘の記録 など）。 */
   function arrayLabel(appKey, field) {
-    const perApp = appLabels(appKey).arrays || {};
-    return perApp[field] || (LABELS.fields || {})[field] || field;
+    return nameFrom(appKey, "arrays", field);
   }
 
   function blobLabel(appKey, name) {
@@ -262,7 +272,7 @@
       overview = await api(`/dashboard/overview${refresh ? "?refresh=1" : ""}`);
       render();
     } catch (e) {
-      if (e.unauthorized) return logout("セッションが切れました。もう一度ログインしてください");
+      if (e.unauthorized) return logout(SESSION_EXPIRED_MESSAGE);
       alert(e.message);
     } finally {
       setLoading(false);
@@ -288,14 +298,15 @@
     const withServer = apps.filter((a) => a.cosmos || a.blob);
     const healthy = apps.filter((a) => a.health && a.health.ok).length;
     const checked = apps.filter((a) => a.health).length;
+    const m = metricLabel;
     const items = [
       ["登録データ（全アプリ合計）", fmtNum(sum("documents")), "件", "全アプリの Cosmos DB に保存されているデータの総数"],
-      [`${metricLabel("last7d").name}`, fmtNum(sum("new7d")), "件", metricLabel("last7d").desc],
-      [`${metricLabel("last30d").name}`, fmtNum(sum("new30d")), "件", metricLabel("last30d").desc],
-      [`${metricLabel("users").name}（合計）`, fmtNum(sum("users")), "人・端末", "各アプリの利用者数の合計。アプリをまたいだ名寄せはしていない"],
-      [metricLabel("active30d").name, fmtNum(sum("activeUsers30d")), "人・端末", metricLabel("active30d").desc],
+      [m("last7d").name, fmtNum(sum("new7d")), "件", m("last7d").desc],
+      [m("last30d").name, fmtNum(sum("new30d")), "件", m("last30d").desc],
+      [`${m("users").name}（合計）`, fmtNum(sum("users")), "人・端末", "各アプリの利用者数の合計。アプリをまたいだ名寄せはしていない"],
+      [m("active30d").name, fmtNum(sum("activeUsers30d")), "人・端末", m("active30d").desc],
       ["保存ファイルの容量", fmtBytes(sum("blobBytes")), `${fmtNum(sum("blobCount"))} ファイル`, "写真・レシート・PDF など Blob Storage の合計（Functions の内部ファイルは除く）"],
-      [metricLabel("health").name, `${healthy} / ${checked}`, `${withServer.length} アプリにサーバーあり`, metricLabel("health").desc],
+      [m("health").name, `${healthy} / ${checked}`, `${withServer.length} アプリにサーバーあり`, m("health").desc],
     ];
     for (const [label, value, sub, desc] of items) {
       row.appendChild(
@@ -382,16 +393,17 @@
       return section;
     }
 
+    const m = metricLabel;
     section.appendChild(
       el(
         "div",
         { class: "app-summary" },
         [
           ["登録データ", fmtNum(s.documents), "このアプリの全コンテナの合計件数"],
-          [metricLabel("last7d").name, fmtNum(s.new7d), metricLabel("last7d").desc],
-          [metricLabel("last30d").name, fmtNum(s.new30d), metricLabel("last30d").desc],
-          [metricLabel("users").name, fmtNum(s.users), "利用者の台帳（users / Members など）があればその件数、無ければ利用者 ID の種類数"],
-          [metricLabel("active30d").name, fmtNum(s.activeUsers30d), metricLabel("active30d").desc],
+          [m("last7d").name, fmtNum(s.new7d), m("last7d").desc],
+          [m("last30d").name, fmtNum(s.new30d), m("last30d").desc],
+          [m("users").name, fmtNum(s.users), "利用者の台帳（users / Members など）があればその件数、無ければ利用者 ID の種類数"],
+          [m("active30d").name, fmtNum(s.activeUsers30d), m("active30d").desc],
           ["保存ファイルの容量", fmtBytes(s.blobBytes), "写真・レシート・PDF などの合計サイズ"],
         ].map(([label, value, desc]) =>
           el("div", { class: "mini-stat", title: desc }, [el("p", { class: "kpi-label", text: label }), el("p", { class: "kpi-value", text: value })])
@@ -511,7 +523,7 @@
     const max = values.reduce((m, v) => Math.max(m, v.count), 0) || 1;
     const shown = values.slice(0, 12);
     for (const v of shown) {
-      const friendly = v.key === "(未設定)" ? v.key : valueLabel(appKey, b.field, v.key);
+      const friendly = v.key === UNSET_KEY ? v.key : valueLabel(appKey, b.field, v.key);
       const tip = friendly === v.key ? `${v.key}: ${fmtNum(v.count)} 件` : `${friendly}（${v.key}）: ${fmtNum(v.count)} 件`;
       wrap.appendChild(
         el("div", { class: "breakdown-row", title: tip }, [
@@ -712,28 +724,35 @@
 
   let recentItems = [];
   let recentRaw = false;
-
   let recentAppKey = "";
 
+  function closeRecent() {
+    $("recent-modal").hidden = true;
+  }
+
+  /** 「JSON 表示」⇄「表で表示」の切替ボタンの文言を現在の表示形式に合わせる。 */
+  function setRecentRaw(raw) {
+    recentRaw = raw;
+    $("recent-toggle-raw").textContent = raw ? "表で表示" : "JSON 表示";
+  }
+
   async function openRecent(app, containerName) {
-    const modal = $("recent-modal");
     recentAppKey = app.key;
     const label = containerLabel(app.key, containerName);
     $("recent-title").textContent = `${app.name} / ${label.name}${label.mapped ? `（${containerName}）` : ""} の直近データ`;
     const body = $("recent-body");
     clear(body);
     body.appendChild(el("p", { class: "empty", text: "取得しています…" }));
-    modal.hidden = false;
-    recentRaw = false;
-    $("recent-toggle-raw").textContent = "JSON 表示";
+    $("recent-modal").hidden = false;
+    setRecentRaw(false);
     try {
       const res = await api(`/dashboard/apps/${encodeURIComponent(app.key)}/containers/${encodeURIComponent(containerName)}/recent?limit=50`);
       recentItems = res.items || [];
       renderRecent();
     } catch (e) {
       if (e.unauthorized) {
-        modal.hidden = true;
-        return logout("セッションが切れました。もう一度ログインしてください");
+        closeRecent();
+        return logout(SESSION_EXPIRED_MESSAGE);
       }
       clear(body);
       body.appendChild(el("div", { class: "error-box", text: e.message }));
@@ -788,26 +807,21 @@
   function cellText(v) {
     if (v === undefined) return "";
     if (v === null) return "null";
-    if (typeof v === "object") {
-      const s = JSON.stringify(v);
-      return s.length > 80 ? `${s.slice(0, 80)}…` : s;
-    }
-    const s = String(v);
-    return s.length > 80 ? `${s.slice(0, 80)}…` : s;
+    const s = typeof v === "object" ? JSON.stringify(v) : String(v);
+    return s.length > CELL_MAX_CHARS ? `${s.slice(0, CELL_MAX_CHARS)}…` : s;
   }
 
   $("recent-toggle-raw").addEventListener("click", () => {
-    recentRaw = !recentRaw;
-    $("recent-toggle-raw").textContent = recentRaw ? "表で表示" : "JSON 表示";
+    setRecentRaw(!recentRaw);
     renderRecent();
   });
 
   $("recent-modal").addEventListener("click", (ev) => {
-    if (ev.target.closest("[data-close]")) $("recent-modal").hidden = true;
+    if (ev.target.closest("[data-close]")) closeRecent();
   });
 
   document.addEventListener("keydown", (ev) => {
-    if (ev.key === "Escape") $("recent-modal").hidden = true;
+    if (ev.key === "Escape") closeRecent();
   });
 
   // ---------------------------------------------------------------------------

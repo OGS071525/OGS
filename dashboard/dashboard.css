@@ -469,7 +469,6 @@ main .btn.ghost:hover,
 
 .chart .bar { fill: var(--series-1); }
 .chart .bar.zero { fill: var(--series-1-soft); }
-.chart .bar.hover { fill: var(--brand-deep); }
 .chart .gridline { stroke: var(--grid); stroke-width: 1; }
 .chart .baseline { stroke: var(--axis); stroke-width: 1; }
 .chart .tick { fill: var(--muted); font-size: 10px; font-family: inherit; font-variant-numeric: tabular-nums; }
