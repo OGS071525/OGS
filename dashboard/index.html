@@ -43,6 +43,19 @@
   <main id="dashboard-view" class="dashboard-view" hidden>
     <section class="kpi-row" id="kpi-row" aria-label="全アプリ合計"></section>
 
+    <section class="panel" aria-labelledby="users-title">
+      <h2 class="panel-title" id="users-title">アプリ別の利用者数・ダウンロード数</h2>
+      <p class="panel-lead">
+        各アプリのデータベースから直接数えた値です（App Store Connect のレポートより早く反映されます）。
+        期間は集計時点からさかのぼった 24 時間・7 日・30 日です。
+      </p>
+      <div id="users-table"></div>
+      <ul class="panel-notes">
+        <li><b>ダウンロード数（推定）</b>… サーバーに記録された端末・アカウントの数。全コンテナの利用者 ID を名寄せして数えています。インストールしてもサーバーと一度も通信していない端末（サインイン前など）は含まれないため、ストアの数値とは一致しません。期間の列は、その期間に初めて記録された数です。</li>
+        <li><b>利用者数</b>… その期間にデータを作成・更新した端末・アカウントの数。データを見るだけの利用は数えられません。</li>
+      </ul>
+    </section>
+
     <nav class="app-tabs" id="app-tabs" aria-label="アプリ切り替え"></nav>
 
     <div id="app-sections"></div>

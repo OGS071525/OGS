@@ -286,6 +286,7 @@
       ? `${fmtDateTime(overview.generatedAt)} 時点のキャッシュです（「再集計」で最新化）`
       : `${fmtDateTime(overview.generatedAt)} に ${nf.format(Math.round(overview.elapsedMs / 100) / 10)} 秒で集計しました`;
     renderKpis();
+    renderUsersTable();
     renderTabs();
     renderSections();
   }
@@ -317,6 +318,89 @@
         ])
       );
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // アプリ別の利用者数・ダウンロード数（一覧表）
+  // ---------------------------------------------------------------------------
+
+  /** 一覧表の数値列: [UserStats の項目, 見出し] */
+  const DOWNLOAD_COLUMNS = [
+    ["total", "累計"],
+    ["new1d", "24時間"],
+    ["new7d", "7日"],
+    ["new30d", "30日"],
+  ];
+  const ACTIVE_COLUMNS = [
+    ["active1d", "24時間"],
+    ["active7d", "7日"],
+    ["active30d", "30日"],
+  ];
+  const USER_COLUMNS = DOWNLOAD_COLUMNS.concat(ACTIVE_COLUMNS);
+
+  function selectApp(key) {
+    selectedApp = key;
+    renderTabs();
+    renderSections();
+    const target = $(`app-${key}`);
+    if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  /** 利用者数が出せないアプリの理由（表の 1 セルにまとめて出す）。 */
+  function usersUnavailableReason(app) {
+    if (!app.cosmos) return `${app.note || "サーバーにデータを持ちません"}。ストアの数値は App Store Connect で確認してください`;
+    if (app.cosmos.error) return `データベースに接続できませんでした: ${app.cosmos.error}`;
+    return "利用者 ID を持つデータがありません";
+  }
+
+  function renderUsersTable() {
+    const root = $("users-table");
+    clear(root);
+    const m = metricLabel;
+    const apps = overview.apps || [];
+    const counted = apps.filter((a) => a.users);
+
+    const rows = apps.map((app) => {
+      const nameCell = el("td", {}, [
+        el("button", { class: "app-link", type: "button", text: `${app.icon || "📱"} ${app.name}`, onclick: () => selectApp(app.key) }),
+      ]);
+      const u = app.users;
+      if (!u) {
+        return el("tr", {}, [nameCell, el("td", { class: "muted", colspan: USER_COLUMNS.length + 1, text: usersUnavailableReason(app) })]);
+      }
+      return el("tr", {}, [
+        nameCell,
+        ...USER_COLUMNS.map(([key], i) => el("td", { class: i === 0 ? "num strong" : "num", text: fmtNum(u[key]) })),
+        el("td", { text: fmtDateTime(u.lastActiveAt) }),
+      ]);
+    });
+
+    const sum = (key) => counted.reduce((s, a) => s + (a.users[key] || 0), 0);
+    const latest = counted.map((a) => a.users.lastActiveAt).filter(Boolean).sort().pop();
+    const foot = el("tr", {}, [
+      el("td", { text: "合計", title: "アプリをまたいだ名寄せはしていない単純合計" }),
+      ...USER_COLUMNS.map(([key]) => el("td", { class: "num", text: fmtNum(sum(key)) })),
+      el("td", { text: fmtDateTime(latest) }),
+    ]);
+
+    const sub = (cols, desc) => cols.map(([, label]) => el("th", { class: "num", text: label, title: desc }));
+    root.appendChild(
+      el("div", { class: "table-wrap" }, [
+        el("table", { class: "data-table users-table" }, [
+          el("thead", {}, [
+            el("tr", {}, [
+              el("th", { rowspan: 2, text: "アプリ" }),
+              el("th", { class: "group", colspan: DOWNLOAD_COLUMNS.length, text: m("downloads").name, title: m("downloads").desc }),
+              el("th", { class: "group", colspan: ACTIVE_COLUMNS.length, text: m("activeUsers").name, title: m("activeUsers").desc }),
+              el("th", { rowspan: 2, text: m("lastActive").name, title: m("lastActive").desc }),
+            ]),
+            el("tr", {}, [...sub(DOWNLOAD_COLUMNS, m("downloads").desc), ...sub(ACTIVE_COLUMNS, m("activeUsers").desc)]),
+          ]),
+          el("tbody", {}, rows),
+          counted.length > 1 ? el("tfoot", {}, [foot]) : null,
+        ]),
+      ])
+    );
   }
 
   function renderTabs() {
@@ -402,7 +486,7 @@
           ["登録データ", fmtNum(s.documents), "このアプリの全コンテナの合計件数"],
           [m("last7d").name, fmtNum(s.new7d), m("last7d").desc],
           [m("last30d").name, fmtNum(s.new30d), m("last30d").desc],
-          [m("users").name, fmtNum(s.users), "利用者の台帳（users / Members など）があればその件数、無ければ利用者 ID の種類数"],
+          [m("users").name, fmtNum(s.users), "全コンテナの利用者 ID を名寄せした端末・アカウントの数"],
           [m("active30d").name, fmtNum(s.activeUsers30d), m("active30d").desc],
           ["保存ファイルの容量", fmtBytes(s.blobBytes), "写真・レシート・PDF などの合計サイズ"],
         ].map(([label, value, desc]) =>
@@ -411,9 +495,23 @@
       )
     );
 
+    if (app.users) section.appendChild(renderUserTrend(app));
     if (app.cosmos) section.appendChild(renderCosmos(app));
     if (app.blob) section.appendChild(renderBlob(app));
     return section;
+  }
+
+  /** 新規利用開始の日別推移と、利用者を数えた根拠（どのコンテナの何の項目か）。 */
+  function renderUserTrend(app) {
+    const u = app.users;
+    const sources = (u.sources || [])
+      .slice()
+      .sort((a, b) => b.users - a.users)
+      .map((s) => `${containerLabel(app.key, s.container).name}（${s.container}.${s.field}）${fmtNum(s.users)}`);
+    return el("div", { class: "user-trend" }, [
+      u.dailyNew && u.dailyNew.length ? barChart(u.dailyNew, "新しく使い始めた端末・アカウント（日別・日本時間）") : null,
+      el("p", { class: "hint", text: `利用者の数え方: ${sources.join(" / ")} を名寄せ。最初の記録 ${fmtDateTime(u.firstSeenAt)}` }),
+    ]);
   }
 
   // ---------------------------------------------------------------------------
