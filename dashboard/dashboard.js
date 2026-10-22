@@ -14,6 +14,10 @@
   const UNSET_KEY = "(未設定)";
   /** 直近データの表で 1 セルに出す最大文字数 */
   const CELL_MAX_CHARS = 80;
+  const DAY_MS = 86400000;
+  const JST_OFFSET_MS = 9 * 3600000;
+  /** 系列色のスロット数（dashboard.css の --series-1〜8）。超えたアプリは灰色にする */
+  const SERIES_SLOTS = 8;
 
   const $ = (id) => document.getElementById(id);
   const nf = new Intl.NumberFormat("ja-JP");
@@ -77,6 +81,44 @@
     // "2026-09-24" → "9/24"
     const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(day || "");
     return m ? `${Number(m[2])}/${Number(m[3])}` : day;
+  }
+
+  function fmtFullDay(day) {
+    // "2026-09-24" → "2026/9/24"
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(day || "");
+    return m ? `${m[1]}/${Number(m[2])}/${Number(m[3])}` : day;
+  }
+
+  /** 日本時間の日付（YYYY-MM-DD） */
+  function jstDay(ms) {
+    return new Date(ms + JST_OFFSET_MS).toISOString().slice(0, 10);
+  }
+
+  /** 集計時点（日本時間）の日付 */
+  function generatedDay() {
+    const t = Date.parse(overview.generatedAt);
+    return jstDay(Number.isNaN(t) ? Date.now() : t);
+  }
+
+  /** endDay から遡る days 日分の日付（古い順） */
+  function dayRange(endDay, days) {
+    const end = Date.parse(`${endDay}T00:00:00Z`);
+    const out = [];
+    for (let i = days - 1; i >= 0; i--) out.push(new Date(end - i * DAY_MS).toISOString().slice(0, 10));
+    return out;
+  }
+
+  /** startDay〜endDay の日付（古い順） */
+  function daysBetween(startDay, endDay) {
+    const start = Date.parse(`${startDay}T00:00:00Z`);
+    const end = Date.parse(`${endDay}T00:00:00Z`);
+    return dayRange(endDay, Math.max(1, Math.round((end - start) / DAY_MS) + 1));
+  }
+
+  /** アプリの系列色。色はアプリの並び順（設定順）で固定し、表示するアプリが減っても塗り替えない */
+  function appColor(app) {
+    const i = (overview.apps || []).indexOf(app);
+    return i >= 0 && i < SERIES_SLOTS ? `var(--series-${i + 1})` : "var(--muted)";
   }
 
   function hostOf(url) {
@@ -287,6 +329,7 @@
       : `${fmtDateTime(overview.generatedAt)} に ${nf.format(Math.round(overview.elapsedMs / 100) / 10)} 秒で集計しました`;
     renderKpis();
     renderUsersTable();
+    renderUsersCharts();
     renderTabs();
     renderSections();
   }
@@ -403,6 +446,304 @@
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // アプリ別の利用者数・ダウンロード数（グラフ）
+  //   - アプリ別の横棒: 累計ダウンロード（薄い色）のうち 30 日以内の利用者（濃い色）
+  //   - 累計ダウンロード数の推移: アプリごとの折れ線（色はアプリの並び順で固定）
+  // SVG は表示幅に合わせて描き直す（viewBox で拡大すると文字の大きさが揃わないため）
+  // ---------------------------------------------------------------------------
+
+  let chartObservers = [];
+
+  /** container の幅が変わるたびに draw(幅) で中身を作り直す。 */
+  function drawResponsive(container, draw) {
+    let lastWidth = 0;
+    const ro = new ResizeObserver(() => {
+      const w = Math.floor(container.clientWidth);
+      if (!w || w === lastWidth) return;
+      lastWidth = w;
+      clear(container);
+      container.appendChild(draw(w));
+    });
+    ro.observe(container);
+    chartObservers.push(ro);
+  }
+
+  function legend(items) {
+    return el(
+      "div",
+      { class: "legend" },
+      items.map((it) =>
+        el("span", { class: "legend-item" }, [el("span", { class: it.line ? "legend-line" : "legend-swatch", style: `background:${it.color}` }), it.label])
+      )
+    );
+  }
+
+  /** 0 から max を覆う、きりのよい目盛（4 区切り前後） */
+  function niceTicks(max) {
+    const raw = Math.max(1, max) / 4;
+    const pow = Math.pow(10, Math.floor(Math.log10(raw)));
+    const step = Math.max(1, [1, 2, 5, 10].map((m) => m * pow).find((s) => s >= raw));
+    const ticks = [];
+    for (let v = 0; v < max + step; v += step) ticks.push(v);
+    return ticks;
+  }
+
+  function roundedEndBar(x, y, w, h, r) {
+    // 左（基線）は角、右（値の端）だけ丸める
+    if (w <= r) return `M${x},${y} h${w} v${h} h${-w} z`;
+    return `M${x},${y} H${x + w - r} Q${x + w},${y} ${x + w},${y + r} V${y + h - r} Q${x + w},${y + h} ${x + w - r},${y + h} H${x} Z`;
+  }
+
+  function renderUsersCharts() {
+    chartObservers.forEach((o) => o.disconnect());
+    chartObservers = [];
+    const root = $("users-charts");
+    clear(root);
+    const apps = (overview.apps || []).filter((a) => a.users);
+    if (apps.length === 0) return;
+    root.appendChild(appUsersChart(apps));
+    root.appendChild(downloadsTrendChart(apps));
+  }
+
+  // --- アプリ別の横棒 ---
+
+  function appUsersChart(apps) {
+    const m = metricLabel;
+    const fig = el("figure", { class: "chart users-chart" });
+    fig.appendChild(el("div", { class: "chart-head" }, [el("figcaption", { class: "chart-title", text: "アプリ別のダウンロード数と利用者数" })]));
+    fig.appendChild(
+      legend([
+        { color: "var(--series-1-track)", label: `${m("downloads").name}・累計` },
+        { color: "var(--series-1)", label: "うち 30 日以内の利用者" },
+      ])
+    );
+    const body = el("div", { class: "chart-body" });
+    fig.appendChild(body);
+    drawResponsive(body, (w) => drawAppBars(apps, w));
+    return fig;
+  }
+
+  function drawAppBars(apps, W) {
+    const ROW_H = 46;
+    const LABEL_H = 18;
+    const BAR_H = 14;
+    const VALUE_W = 64;
+    const H = apps.length * ROW_H;
+    const max = niceTicks(Math.max(...apps.map((a) => a.users.total))).pop();
+    const x = (v) => (v / max) * (W - VALUE_W);
+    const svg = el("svg:svg", { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "アプリ別のダウンロード数（累計）と 30 日以内の利用者数。値は上の表と同じ" });
+
+    apps.forEach((app, i) => {
+      const u = app.users;
+      const top = i * ROW_H;
+      const barY = top + LABEL_H + 4;
+      const row = el("svg:g", { class: "bar-row" });
+      row.appendChild(el("svg:text", { class: "label", x: 0, y: top + 13, text: `${app.icon || ""} ${app.name}`.trim() }));
+      if (u.total > 0) row.appendChild(el("svg:path", { class: "bar-track", d: roundedEndBar(0, barY, x(u.total), BAR_H, 4) }));
+      if (u.active30d > 0) row.appendChild(el("svg:path", { class: "bar-fill", d: roundedEndBar(0, barY, x(u.active30d), BAR_H, 4) }));
+      row.appendChild(el("svg:text", { class: "value", x: x(u.total) + 6, y: barY + BAR_H - 2, text: `${fmtNum(u.active30d)} / ${fmtNum(u.total)}` }));
+
+      const tip = () => [
+        el("div", { class: "tt-title", text: app.name }),
+        tooltipRow("var(--series-1-track)", fmtNum(u.total), "ダウンロード数（累計）"),
+        tooltipRow("var(--series-1)", fmtNum(u.active30d), "30 日以内の利用者"),
+      ];
+      const hit = el("svg:rect", { class: "hit", x: 0, y: top, width: W, height: ROW_H, tabindex: 0, "aria-label": `${app.name}: ダウンロード ${u.total}、30 日以内の利用者 ${u.active30d}` });
+      hit.addEventListener("pointerenter", (ev) => showTooltip(ev, tip()));
+      hit.addEventListener("pointermove", moveTooltip);
+      hit.addEventListener("pointerleave", hideTooltip);
+      hit.addEventListener("focus", () => {
+        const r = hit.getBoundingClientRect();
+        showTooltipAt(r.left + Math.min(r.width / 2, x(u.total)), r.top + LABEL_H, tip());
+      });
+      hit.addEventListener("blur", hideTooltip);
+      row.appendChild(hit);
+      svg.appendChild(row);
+    });
+    return svg;
+  }
+
+  // --- 累計ダウンロード数の推移 ---
+
+  /** アプリごとの累計（days の各日の終わり時点） */
+  function cumulativeSeries(apps, days) {
+    return apps.map((app) => {
+      const counts = new Map((app.users.newByDay || []).map((d) => [d.day, d.count]));
+      // 表示期間より前の分は初日にまとめて足しておく
+      let running = (app.users.newByDay || []).filter((d) => d.day < days[0]).reduce((s, d) => s + d.count, 0);
+      const values = days.map((day) => (running += counts.get(day) || 0));
+      return { app, color: appColor(app), values };
+    });
+  }
+
+  function downloadsTrendChart(apps) {
+    const end = generatedDay();
+    const firsts = apps.flatMap((a) => (a.users.newByDay || []).slice(0, 1).map((d) => d.day));
+    const start = firsts.length ? firsts.sort()[0] : end;
+    let days = daysBetween(start, end);
+    if (days.length < 30) days = dayRange(end, 30);
+    const series = cumulativeSeries(apps, days);
+
+    const fig = el("figure", { class: "chart users-chart" });
+    const body = el("div", { class: "chart-body" });
+    const table = trendTable(series, days);
+    table.hidden = true;
+    const toggle = el("button", { class: "chart-toggle", type: "button", text: "表で見る", "aria-pressed": "false" });
+    toggle.addEventListener("click", () => {
+      const showTable = table.hidden;
+      table.hidden = !showTable;
+      body.hidden = showTable;
+      toggle.textContent = showTable ? "グラフで見る" : "表で見る";
+      toggle.setAttribute("aria-pressed", String(showTable));
+    });
+    fig.appendChild(
+      el("div", { class: "chart-head" }, [el("figcaption", { class: "chart-title", text: `累計ダウンロード数（推定）の推移（${fmtFullDay(days[0])}〜）` }), toggle])
+    );
+    if (series.length > 1) fig.appendChild(legend(series.map((s) => ({ color: s.color, label: s.app.name, line: true }))));
+    fig.appendChild(body);
+    fig.appendChild(table);
+    drawResponsive(body, (w) => drawTrend(series, days, w));
+    return fig;
+  }
+
+  /** x 軸の目盛: 長い期間は月初、短い期間は最初・中央・最後の日付 */
+  function dayTicks(days) {
+    if (days.length <= 62) {
+      return [0, Math.floor((days.length - 1) / 2), days.length - 1].map((i) => ({ i, label: fmtDay(days[i]) }));
+    }
+    const months = [];
+    days.forEach((d, i) => {
+      if (d.endsWith("-01")) months.push({ i, label: `${Number(d.slice(5, 7))}月` });
+    });
+    const every = Math.ceil(months.length / 8);
+    return months.filter((_, k) => k % every === 0);
+  }
+
+  function drawTrend(series, days, W) {
+    const H = 220;
+    const padT = 10;
+    const padB = 22;
+    const padL = 32;
+    const endLabels = W >= 480;
+    const padR = endLabels ? 128 : 12;
+    const plotW = W - padL - padR;
+    const plotH = H - padT - padB;
+    const n = days.length;
+    const last = n - 1;
+    const xAt = (i) => padL + (n === 1 ? plotW : (i / last) * plotW);
+    const ticks = niceTicks(Math.max(...series.map((s) => s.values[last])));
+    const yMax = ticks[ticks.length - 1];
+    const yAt = (v) => padT + plotH - (v / yMax) * plotH;
+
+    const svg = el("svg:svg", { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: "img", tabindex: 0, "aria-label": "累計ダウンロード数の推移。左右キーで日付を移動できます" });
+
+    for (const v of ticks) {
+      const yy = yAt(v);
+      svg.appendChild(el("svg:line", { class: v === 0 ? "baseline" : "gridline", x1: padL, x2: padL + plotW, y1: yy, y2: yy }));
+      svg.appendChild(el("svg:text", { class: "tick", x: padL - 6, y: yy + 3, "text-anchor": "end", text: fmtNum(v) }));
+    }
+    for (const t of dayTicks(days)) {
+      const anchor = t.i === 0 ? "start" : t.i === last ? "end" : "middle";
+      svg.appendChild(el("svg:text", { class: "tick", x: xAt(t.i), y: H - 6, "text-anchor": anchor, text: t.label }));
+    }
+
+    for (const s of series) {
+      const points = s.values.map((v, i) => `${xAt(i).toFixed(1)},${yAt(v).toFixed(1)}`).join(" ");
+      svg.appendChild(el("svg:polyline", { class: "line", points, style: `stroke:${s.color}` }));
+      svg.appendChild(el("svg:circle", { class: "end-dot", cx: xAt(last), cy: yAt(s.values[last]), r: 4, style: `fill:${s.color}` }));
+    }
+
+    // 線の終点に名前と値。重なる場合は値の大きい方だけ残し、残りは凡例とツールチップに任せる
+    if (endLabels) {
+      const placed = [];
+      for (const s of series.slice().sort((a, b) => b.values[last] - a.values[last])) {
+        const y = yAt(s.values[last]);
+        if (placed.some((p) => Math.abs(p - y) < 14)) continue;
+        placed.push(y);
+        svg.appendChild(el("svg:text", { class: "value", x: xAt(last) + 8, y: y + 4, text: `${s.app.name} ${fmtNum(s.values[last])}` }));
+      }
+    }
+
+    // 十字線（ポインタに最も近い日へ吸着）と、その日の全系列の値
+    const cross = el("svg:g", { class: "crosshair-layer" });
+    cross.style.display = "none";
+    const vline = el("svg:line", { class: "crosshair", y1: padT, y2: padT + plotH });
+    cross.appendChild(vline);
+    const dots = series.map((s) => {
+      const d = el("svg:circle", { class: "end-dot", r: 4, style: `fill:${s.color}` });
+      cross.appendChild(d);
+      return d;
+    });
+    svg.appendChild(cross);
+
+    let current = -1;
+    const show = (i, clientX, clientY) => {
+      current = Math.max(0, Math.min(last, i));
+      const x = xAt(current);
+      vline.setAttribute("x1", x);
+      vline.setAttribute("x2", x);
+      series.forEach((s, k) => {
+        dots[k].setAttribute("cx", x);
+        dots[k].setAttribute("cy", yAt(s.values[current]));
+      });
+      cross.style.display = "";
+      const rows = series
+        .slice()
+        .sort((a, b) => b.values[current] - a.values[current])
+        .map((s) => tooltipRow(s.color, fmtNum(s.values[current]), s.app.name));
+      showTooltipAt(clientX, clientY, [el("div", { class: "tt-title", text: fmtFullDay(days[current]) }), ...rows]);
+    };
+    const hide = () => {
+      cross.style.display = "none";
+      hideTooltip();
+    };
+    const indexAt = (clientX) => {
+      const r = svg.getBoundingClientRect();
+      return Math.round(((clientX - r.left - padL) / plotW) * last);
+    };
+    const overlay = el("svg:rect", { class: "hit", x: padL, y: padT, width: plotW, height: plotH + padB });
+    overlay.addEventListener("pointermove", (ev) => show(indexAt(ev.clientX), ev.clientX, ev.clientY));
+    overlay.addEventListener("pointerleave", hide);
+    svg.appendChild(overlay);
+
+    // キーボード: フォーカスで最新日、左右キーで 1 日ずつ移動
+    const showAtCurrent = () => {
+      const r = svg.getBoundingClientRect();
+      show(current, r.left + xAt(current), r.top + padT + 8);
+    };
+    svg.addEventListener("focus", () => {
+      current = last;
+      showAtCurrent();
+    });
+    svg.addEventListener("keydown", (ev) => {
+      if (ev.key !== "ArrowLeft" && ev.key !== "ArrowRight") return;
+      ev.preventDefault();
+      current = Math.max(0, Math.min(last, current + (ev.key === "ArrowLeft" ? -1 : 1)));
+      showAtCurrent();
+    });
+    svg.addEventListener("blur", hide);
+    return svg;
+  }
+
+  /** 推移の表: 新規があった日（と集計日）の累計 */
+  function trendTable(series, days) {
+    const last = days.length - 1;
+    const rows = [];
+    days.forEach((day, i) => {
+      const changed = i === 0 || i === last || series.some((s) => s.values[i] !== s.values[i - 1]);
+      if (!changed) return;
+      rows.push(el("tr", {}, [el("td", { text: day }), ...series.map((s) => el("td", { text: fmtNum(s.values[i]) }))]));
+    });
+    rows.reverse();
+    return el("div", { class: "chart-table-wrap" }, [
+      el("table", { class: "chart-table" }, [
+        el("thead", {}, [el("tr", {}, [el("th", { text: "日付" }), ...series.map((s) => el("th", { text: s.app.name }))])]),
+        el("tbody", {}, rows),
+      ]),
+    ]);
+  }
+
   function renderTabs() {
     const nav = $("app-tabs");
     clear(nav);
@@ -508,8 +849,10 @@
       .slice()
       .sort((a, b) => b.users - a.users)
       .map((s) => `${containerLabel(app.key, s.container).name}（${s.container}.${s.field}）${fmtNum(s.users)}`);
+    const counts = new Map((u.newByDay || []).map((d) => [d.day, d.count]));
+    const daily = dayRange(generatedDay(), 30).map((day) => ({ day, count: counts.get(day) || 0 }));
     return el("div", { class: "user-trend" }, [
-      u.dailyNew && u.dailyNew.length ? barChart(u.dailyNew, "新しく使い始めた端末・アカウント（日別・日本時間）") : null,
+      barChart(daily, "新しく使い始めた端末・アカウント（日別・日本時間）"),
       el("p", { class: "hint", text: `利用者の数え方: ${sources.join(" / ")} を名寄せ。最初の記録 ${fmtDateTime(u.firstSeenAt)}` }),
     ]);
   }
@@ -739,17 +1082,33 @@
   }
 
   // --- ツールチップ ---
-  function showTooltip(ev, text) {
+  /** content は文字列か DOM ノードの配列（複数系列の読み取り行など） */
+  function showTooltip(ev, content) {
+    showTooltipAt(ev.clientX, ev.clientY, content);
+  }
+
+  function showTooltipAt(x, y, content) {
     const t = $("tooltip");
-    t.textContent = text;
+    clear(t);
+    for (const c of [].concat(content)) t.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
     t.hidden = false;
-    moveTooltip(ev);
+    t.style.left = `${x}px`;
+    t.style.top = `${y}px`;
   }
 
   function moveTooltip(ev) {
     const t = $("tooltip");
     t.style.left = `${ev.clientX}px`;
     t.style.top = `${ev.clientY}px`;
+  }
+
+  /** ツールチップの 1 行: 系列の色の短い線 ＋ 値（強調）＋ 系列名 */
+  function tooltipRow(color, value, label) {
+    return el("div", { class: "tt-row" }, [
+      el("span", { class: "tt-key", style: `background:${color}` }),
+      el("b", { text: value }),
+      el("span", { text: label }),
+    ]);
   }
 
   function hideTooltip() {
