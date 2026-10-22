@@ -29,8 +29,6 @@
   --series-7: #6250d6;
   --series-8: #e34948;
   --series-1-soft: #cde2fb;
-  /* 横棒の「全体」側（同じ青の明るい段。面に対して 2:1 以上） */
-  --series-1-track: #86b6ef;
   --grid: #e1e0d9;
   --axis: #c3c2b7;
 
@@ -65,7 +63,6 @@
     --series-7: #9085e9;
     --series-8: #e66767;
     --series-1-soft: #1c3d66;
-    --series-1-track: #184f95;
     --grid: #2c2c2a;
     --axis: #383835;
     --good-text: #0ca30c;
@@ -95,7 +92,6 @@
   --series-7: #9085e9;
   --series-8: #e66767;
   --series-1-soft: #1c3d66;
-  --series-1-track: #184f95;
   --grid: #2c2c2a;
   --axis: #383835;
   --good-text: #0ca30c;
@@ -321,7 +317,7 @@ main .btn.ghost:hover,
 
 .users-charts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
   margin-top: 14px;
 }
@@ -329,6 +325,53 @@ main .btn.ghost:hover,
 .users-charts:empty { display: none; }
 .users-chart { min-width: 0; padding: 10px 12px 8px; }
 .chart-body { min-width: 0; margin-top: 4px; }
+.chart-desc { margin: 0; font-size: 11px; color: var(--muted); line-height: 1.5; }
+.users-chart .chart-head { align-items: flex-start; }
+.users-chart .chart-toggle { flex: none; white-space: nowrap; }
+
+/* 期間・アプリの切り替え（グラフの上に 1 行） */
+.chart-filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+}
+
+.filter-group { display: inline-flex; align-items: center; gap: 8px; }
+.filter-label { font-size: 12px; color: var(--text-2); }
+
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.seg-btn {
+  border: none;
+  background: none;
+  padding: 5px 12px;
+  font-size: 13px;
+  color: var(--text-2);
+  cursor: pointer;
+}
+
+.seg-btn + .seg-btn { border-left: 1px solid var(--border); }
+.seg-btn:hover { background: var(--surface-2); }
+.seg-btn[aria-pressed="true"] { background: var(--brand-deep); color: #fff; font-weight: 600; }
+.seg-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+
+.filter-select {
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+}
+
+.filter-select:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
 .legend {
   display: flex;
@@ -345,10 +388,7 @@ main .btn.ghost:hover,
 
 .chart .label { fill: var(--text-2); font-size: 12px; font-family: inherit; }
 .chart .value { fill: var(--text); font-size: 12px; font-weight: 600; font-family: inherit; font-variant-numeric: tabular-nums; }
-.chart .bar-track { fill: var(--series-1-track); }
-.chart .bar-fill { fill: var(--series-1); }
-.chart .bar-row:hover .bar-track, .chart .bar-row:focus-within .bar-track,
-.chart .bar-row:hover .bar-fill, .chart .bar-row:focus-within .bar-fill { opacity: 0.8; }
+.chart .col-highlight { fill: var(--hairline); }
 .chart .line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .chart .end-dot { stroke: var(--surface); stroke-width: 2; }
 .chart .crosshair { stroke: var(--axis); stroke-width: 1; }
@@ -361,8 +401,14 @@ main .btn.ghost:hover,
 .chart-table-wrap .chart-table th + th, .chart-table-wrap .chart-table td + td { text-align: right; font-variant-numeric: tabular-nums; }
 
 .user-trend { margin-bottom: 6px; }
+
 /* グラフの SVG は幅に合わせて拡大するので、コンテナカードと同じくらいの幅に抑えて文字の大きさを揃える */
-.user-trend .chart { max-width: 400px; }
+.user-trend-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 400px));
+  gap: 12px;
+}
+
 .user-trend .hint { margin: 4px 0 0; }
 
 .app-tabs {

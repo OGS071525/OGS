@@ -448,12 +448,43 @@
 
   // ---------------------------------------------------------------------------
   // アプリ別の利用者数・ダウンロード数（グラフ）
-  //   - アプリ別の横棒: 累計ダウンロード（薄い色）のうち 30 日以内の利用者（濃い色）
-  //   - 累計ダウンロード数の推移: アプリごとの折れ線（色はアプリの並び順で固定）
+  //   - 日別のダウンロード数 / 日別の利用者数: 日ごとの積み上げ棒（積み上げの色 = アプリ）
+  //   - 累計ダウンロード数の推移: アプリごとの折れ線
+  // 上の「期間」「アプリ」の切り替えが 3 つのグラフすべてに効く。色はアプリの並び順で固定（appColor）。
   // SVG は表示幅に合わせて描き直す（viewBox で拡大すると文字の大きさが揃わないため）
   // ---------------------------------------------------------------------------
 
+  const PERIODS = [
+    ["30", "30日"],
+    ["90", "90日"],
+    ["all", "全期間"],
+  ];
+  const DEFAULT_USERS_FILTER = { period: "30", app: "all" };
+  /** 期間とアプリの選択はこのブラウザにだけ覚えておく（無くても既定値で動く） */
+  const USERS_FILTER_KEY = "ogs_dashboard_users_filter";
+  /** タッチで読んだツールチップを消すまでの時間 */
+  const TOUCH_TOOLTIP_MS = 3000;
+
+  let usersFilter = loadUsersFilter();
   let chartObservers = [];
+
+  function loadUsersFilter() {
+    try {
+      return Object.assign({}, DEFAULT_USERS_FILTER, JSON.parse(localStorage.getItem(USERS_FILTER_KEY) || "{}"));
+    } catch {
+      return Object.assign({}, DEFAULT_USERS_FILTER);
+    }
+  }
+
+  function setUsersFilter(change, focus) {
+    Object.assign(usersFilter, change);
+    try {
+      localStorage.setItem(USERS_FILTER_KEY, JSON.stringify(usersFilter));
+    } catch {
+      /* 保存できなくても今回の表示には効く */
+    }
+    renderUsersCharts(focus);
+  }
 
   /** container の幅が変わるたびに draw(幅) で中身を作り直す。 */
   function drawResponsive(container, draw) {
@@ -489,105 +520,104 @@
     return ticks;
   }
 
-  function roundedEndBar(x, y, w, h, r) {
-    // 左（基線）は角、右（値の端）だけ丸める
-    if (w <= r) return `M${x},${y} h${w} v${h} h${-w} z`;
-    return `M${x},${y} H${x + w - r} Q${x + w},${y} ${x + w},${y + r} V${y + h - r} Q${x + w},${y + h} ${x + w - r},${y + h} H${x} Z`;
-  }
-
-  function renderUsersCharts() {
+  /** focus: 作り直したあとにフォーカスを戻す切り替え（"period" / "app"） */
+  function renderUsersCharts(focus) {
     chartObservers.forEach((o) => o.disconnect());
     chartObservers = [];
     const root = $("users-charts");
     clear(root);
-    const apps = (overview.apps || []).filter((a) => a.users);
-    if (apps.length === 0) return;
-    root.appendChild(appUsersChart(apps));
-    root.appendChild(downloadsTrendChart(apps));
-  }
+    const withUsers = (overview.apps || []).filter((a) => a.users);
+    if (withUsers.length === 0) return;
+    if (!PERIODS.some(([key]) => key === usersFilter.period)) usersFilter.period = DEFAULT_USERS_FILTER.period;
+    if (!withUsers.some((a) => a.key === usersFilter.app)) usersFilter.app = "all";
 
-  // --- アプリ別の横棒 ---
-
-  function appUsersChart(apps) {
+    const apps = usersFilter.app === "all" ? withUsers : withUsers.filter((a) => a.key === usersFilter.app);
+    const days = chartDays(apps);
     const m = metricLabel;
-    const fig = el("figure", { class: "chart users-chart" });
-    fig.appendChild(el("div", { class: "chart-head" }, [el("figcaption", { class: "chart-title", text: "アプリ別のダウンロード数と利用者数" })]));
-    fig.appendChild(
-      legend([
-        { color: "var(--series-1-track)", label: `${m("downloads").name}・累計` },
-        { color: "var(--series-1)", label: "うち 30 日以内の利用者" },
-      ])
+
+    const filters = usersFilterBar(withUsers);
+    root.appendChild(filters);
+
+    const downloads = apps.map((a) => dailySeries(a, a.users.newByDay, days));
+    const downloadSum = downloads.reduce((s, x) => s + x.values.reduce((a, b) => a + b, 0), 0);
+    root.appendChild(
+      dailyStackChart(m("dailyNew").name, `期間内の合計 ${fmtNum(downloadSum)}。${m("dailyNew").desc}`, downloads, days)
     );
-    const body = el("div", { class: "chart-body" });
-    fig.appendChild(body);
-    drawResponsive(body, (w) => drawAppBars(apps, w));
-    return fig;
+
+    const active = apps.map((a) => dailySeries(a, a.users.activeByDay, days));
+    const activeSum = active.reduce((s, x) => s + x.values.reduce((a, b) => a + b, 0), 0);
+    const perDay = Math.round((activeSum / days.length) * 10) / 10;
+    root.appendChild(
+      dailyStackChart(m("dailyActive").name, `期間内の 1 日平均 ${fmtNum(perDay)}。${m("dailyActive").desc}`, active, days)
+    );
+
+    root.appendChild(cumulativeChart(cumulativeSeries(apps, days), days));
+
+    if (focus) {
+      const target = filters.querySelector(focus === "app" ? "select" : '.seg-btn[aria-pressed="true"]');
+      if (target) target.focus();
+    }
   }
 
-  function drawAppBars(apps, W) {
-    const ROW_H = 46;
-    const LABEL_H = 18;
-    const BAR_H = 14;
-    const VALUE_W = 64;
-    const H = apps.length * ROW_H;
-    const max = niceTicks(Math.max(...apps.map((a) => a.users.total))).pop();
-    const x = (v) => (v / max) * (W - VALUE_W);
-    const svg = el("svg:svg", { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "アプリ別のダウンロード数（累計）と 30 日以内の利用者数。値は上の表と同じ" });
-
-    apps.forEach((app, i) => {
-      const u = app.users;
-      const top = i * ROW_H;
-      const barY = top + LABEL_H + 4;
-      const row = el("svg:g", { class: "bar-row" });
-      row.appendChild(el("svg:text", { class: "label", x: 0, y: top + 13, text: `${app.icon || ""} ${app.name}`.trim() }));
-      if (u.total > 0) row.appendChild(el("svg:path", { class: "bar-track", d: roundedEndBar(0, barY, x(u.total), BAR_H, 4) }));
-      if (u.active30d > 0) row.appendChild(el("svg:path", { class: "bar-fill", d: roundedEndBar(0, barY, x(u.active30d), BAR_H, 4) }));
-      row.appendChild(el("svg:text", { class: "value", x: x(u.total) + 6, y: barY + BAR_H - 2, text: `${fmtNum(u.active30d)} / ${fmtNum(u.total)}` }));
-
-      const tip = () => [
-        el("div", { class: "tt-title", text: app.name }),
-        tooltipRow("var(--series-1-track)", fmtNum(u.total), "ダウンロード数（累計）"),
-        tooltipRow("var(--series-1)", fmtNum(u.active30d), "30 日以内の利用者"),
-      ];
-      const hit = el("svg:rect", { class: "hit", x: 0, y: top, width: W, height: ROW_H, tabindex: 0, "aria-label": `${app.name}: ダウンロード ${u.total}、30 日以内の利用者 ${u.active30d}` });
-      hit.addEventListener("pointerenter", (ev) => showTooltip(ev, tip()));
-      hit.addEventListener("pointermove", moveTooltip);
-      hit.addEventListener("pointerleave", hideTooltip);
-      hit.addEventListener("focus", () => {
-        const r = hit.getBoundingClientRect();
-        showTooltipAt(r.left + Math.min(r.width / 2, x(u.total)), r.top + LABEL_H, tip());
-      });
-      hit.addEventListener("blur", hideTooltip);
-      row.appendChild(hit);
-      svg.appendChild(row);
-    });
-    return svg;
+  /** 期間の日付（日本時間・古い順）。全期間は選んだアプリの最初の記録から */
+  function chartDays(apps) {
+    const end = generatedDay();
+    if (usersFilter.period !== "all") return dayRange(end, Number(usersFilter.period));
+    const firsts = apps
+      .flatMap((a) => [a.users.newByDay, a.users.activeByDay])
+      .map((points) => (points && points[0] ? points[0].day : null))
+      .filter(Boolean)
+      .sort();
+    const days = firsts.length ? daysBetween(firsts[0], end) : [];
+    return days.length >= 30 ? days : dayRange(end, 30);
   }
 
-  // --- 累計ダウンロード数の推移 ---
+  function dailySeries(app, points, days) {
+    const counts = new Map((points || []).map((d) => [d.day, d.count]));
+    return { app, color: appColor(app), values: days.map((day) => counts.get(day) || 0) };
+  }
 
-  /** アプリごとの累計（days の各日の終わり時点） */
+  /** アプリごとの累計（days の各日の終わり時点）。期間より前の分は初日の値に含める */
   function cumulativeSeries(apps, days) {
     return apps.map((app) => {
-      const counts = new Map((app.users.newByDay || []).map((d) => [d.day, d.count]));
-      // 表示期間より前の分は初日にまとめて足しておく
-      let running = (app.users.newByDay || []).filter((d) => d.day < days[0]).reduce((s, d) => s + d.count, 0);
+      const points = app.users.newByDay || [];
+      const counts = new Map(points.map((d) => [d.day, d.count]));
+      let running = points.filter((d) => d.day < days[0]).reduce((s, d) => s + d.count, 0);
       const values = days.map((day) => (running += counts.get(day) || 0));
       return { app, color: appColor(app), values };
     });
   }
 
-  function downloadsTrendChart(apps) {
-    const end = generatedDay();
-    const firsts = apps.flatMap((a) => (a.users.newByDay || []).slice(0, 1).map((d) => d.day));
-    const start = firsts.length ? firsts.sort()[0] : end;
-    let days = daysBetween(start, end);
-    if (days.length < 30) days = dayRange(end, 30);
-    const series = cumulativeSeries(apps, days);
+  function usersFilterBar(apps) {
+    const periodButtons = PERIODS.map(([key, label]) =>
+      el("button", {
+        class: "seg-btn",
+        type: "button",
+        "aria-pressed": String(usersFilter.period === key),
+        text: label,
+        onclick: () => setUsersFilter({ period: key }, "period"),
+      })
+    );
+    const options = [{ key: "all", label: "すべてのアプリ" }].concat(apps.map((a) => ({ key: a.key, label: `${a.icon || ""} ${a.name}`.trim() })));
+    const select = el(
+      "select",
+      { class: "filter-select", "aria-label": "アプリ" },
+      options.map((o) => el("option", { value: o.key, text: o.label, selected: usersFilter.app === o.key }))
+    );
+    select.addEventListener("change", () => setUsersFilter({ app: select.value }, "app"));
+    return el("div", { class: "chart-filters" }, [
+      el("div", { class: "filter-group" }, [
+        el("span", { class: "filter-label", text: "期間" }),
+        el("div", { class: "segmented", role: "group", "aria-label": "期間" }, periodButtons),
+      ]),
+      el("div", { class: "filter-group" }, [el("span", { class: "filter-label", text: "アプリ" }), select]),
+    ]);
+  }
 
+  /** グラフの枠: 見出し・説明・「表で見る」・凡例（2 系列以上）・本体（幅に合わせて描画）・表 */
+  function chartFigure({ title, desc, series, lineKeys, table, draw }) {
     const fig = el("figure", { class: "chart users-chart" });
     const body = el("div", { class: "chart-body" });
-    const table = trendTable(series, days);
     table.hidden = true;
     const toggle = el("button", { class: "chart-toggle", type: "button", text: "表で見る", "aria-pressed": "false" });
     toggle.addEventListener("click", () => {
@@ -598,13 +628,77 @@
       toggle.setAttribute("aria-pressed", String(showTable));
     });
     fig.appendChild(
-      el("div", { class: "chart-head" }, [el("figcaption", { class: "chart-title", text: `累計ダウンロード数（推定）の推移（${fmtFullDay(days[0])}〜）` }), toggle])
+      el("div", { class: "chart-head" }, [
+        el("div", {}, [el("figcaption", { class: "chart-title", text: title }), desc ? el("p", { class: "chart-desc", text: desc }) : null]),
+        toggle,
+      ])
     );
-    if (series.length > 1) fig.appendChild(legend(series.map((s) => ({ color: s.color, label: s.app.name, line: true }))));
+    if (series.length > 1) fig.appendChild(legend(series.map((s) => ({ color: s.color, label: s.app.name, line: lineKeys }))));
     fig.appendChild(body);
     fig.appendChild(table);
-    drawResponsive(body, (w) => drawTrend(series, days, w));
+    drawResponsive(body, draw);
     return fig;
+  }
+
+  /** 日付が横に並ぶグラフに、ポインタとキーボードでの読み取りを付ける。render(i) が強調とツールチップの中身を作る */
+  function attachDayCursor(svg, o) {
+    let current = o.n - 1;
+    let touchTimer = 0;
+    const clamp = (i) => Math.max(0, Math.min(o.n - 1, i));
+    const show = (i, clientX, clientY) => {
+      clearTimeout(touchTimer);
+      current = clamp(i);
+      showTooltipAt(clientX, clientY, o.render(current));
+    };
+    const hide = () => {
+      o.reset();
+      hideTooltip();
+    };
+    const onPointer = (ev) => {
+      const r = svg.getBoundingClientRect();
+      show(o.indexAt(ev.clientX - r.left), ev.clientX, ev.clientY);
+    };
+    const overlay = el("svg:rect", { class: "hit", x: o.left, y: o.top, width: o.width, height: o.height });
+    overlay.addEventListener("pointermove", onPointer);
+    overlay.addEventListener("pointerdown", onPointer);
+    overlay.addEventListener("pointerleave", (ev) => {
+      // タッチは指を離した時点で leave になるので、少し読めるように残してから消す
+      if (ev.pointerType === "touch") touchTimer = setTimeout(hide, TOUCH_TOOLTIP_MS);
+      else hide();
+    });
+    svg.appendChild(overlay);
+
+    // キーボード: フォーカスで最新日、左右キーで 1 日ずつ移動
+    const showCurrent = () => {
+      const r = svg.getBoundingClientRect();
+      show(current, r.left + o.xAt(current), r.top + o.top + 8);
+    };
+    svg.setAttribute("tabindex", "0");
+    svg.addEventListener("focus", () => {
+      current = o.n - 1;
+      showCurrent();
+    });
+    svg.addEventListener("keydown", (ev) => {
+      if (ev.key !== "ArrowLeft" && ev.key !== "ArrowRight") return;
+      ev.preventDefault();
+      current = clamp(current + (ev.key === "ArrowLeft" ? -1 : 1));
+      showCurrent();
+    });
+    svg.addEventListener("blur", hide);
+  }
+
+  /** 目盛（y の横線と数値、x の日付）を描く */
+  function drawDayAxes(svg, { days, ticks, yAt, xAt, left, right, height }) {
+    for (const v of ticks) {
+      const yy = yAt(v);
+      svg.appendChild(el("svg:line", { class: v === 0 ? "baseline" : "gridline", x1: left, x2: right, y1: yy, y2: yy }));
+      svg.appendChild(el("svg:text", { class: "tick", x: left - 6, y: yy + 3, "text-anchor": "end", text: fmtNum(v) }));
+    }
+    const last = days.length - 1;
+    for (const t of dayTicks(days)) {
+      const anchor = t.i === 0 ? "start" : t.i === last ? "end" : "middle";
+      svg.appendChild(el("svg:text", { class: "tick", x: xAt(t.i), y: height - 6, "text-anchor": anchor, text: t.label }));
+    }
   }
 
   /** x 軸の目盛: 長い期間は月初、短い期間は最初・中央・最後の日付 */
@@ -618,6 +712,108 @@
     });
     const every = Math.ceil(months.length / 8);
     return months.filter((_, k) => k % every === 0);
+  }
+
+  // --- 日別の積み上げ棒 ---
+
+  function dailyStackChart(title, desc, series, days) {
+    const totals = days.map((_, i) => series.reduce((s, x) => s + x.values[i], 0));
+    return chartFigure({
+      title,
+      desc,
+      series,
+      lineKeys: false,
+      table: dayValuesTable(days, series, (i) => totals[i] > 0, series.length > 1),
+      draw: (w) => drawStackedDays(series, days, totals, w, title),
+    });
+  }
+
+  function drawStackedDays(series, days, totals, W, title) {
+    const H = 200;
+    const padT = 18;
+    const padB = 22;
+    const padL = 32;
+    const padR = 8;
+    const plotW = W - padL - padR;
+    const plotH = H - padT - padB;
+    const n = days.length;
+    const maxTotal = Math.max(...totals);
+    const ticks = niceTicks(maxTotal);
+    const yMax = ticks[ticks.length - 1];
+    const unit = plotH / yMax;
+    const baseY = padT + plotH;
+    const yAt = (v) => baseY - v * unit;
+    // 1 日ぶんの幅。棒どうしの隙間は 2px（狭いときは詰める）、棒の太さは 24px まで
+    const slot = plotW / n;
+    const gap = slot >= 8 ? 2 : slot >= 3 ? 1 : 0;
+    const barW = Math.min(24, slot - gap);
+    const segGap = unit >= 8 ? 2 : unit >= 4 ? 1 : 0;
+    const xAt = (i) => padL + i * slot + slot / 2;
+
+    const svg = el("svg:svg", { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": `${title}。左右キーで日付を移動できます` });
+    drawDayAxes(svg, { days, ticks, yAt, xAt, left: padL, right: padL + plotW, height: H });
+
+    const highlight = el("svg:rect", { class: "col-highlight", y: padT, width: slot, height: plotH });
+    highlight.style.display = "none";
+    svg.appendChild(highlight);
+
+    const maxIdx = maxTotal > 0 ? totals.indexOf(maxTotal) : -1;
+    days.forEach((_, i) => {
+      if (!totals[i]) return;
+      const x = xAt(i) - barW / 2;
+      const parts = series.filter((s) => s.values[i] > 0);
+      let bottom = baseY;
+      parts.forEach((s, k) => {
+        const top = bottom - s.values[i] * unit;
+        // 積み上げの境目は面の色の隙間で分ける（下の段の上端を削る）
+        const height = Math.max(1, bottom - (k > 0 ? segGap : 0) - top);
+        const d =
+          k === parts.length - 1 ? roundedTopBar(x, top, barW, height, Math.min(4, barW / 2, height)) : `M${x},${top} h${barW} v${height} h${-barW} z`;
+        svg.appendChild(el("svg:path", { class: "seg", d, style: `fill:${s.color}` }));
+        bottom = top;
+      });
+      if (i === maxIdx) {
+        svg.appendChild(el("svg:text", { class: "value", x: xAt(i), y: yAt(totals[i]) - 5, "text-anchor": "middle", text: fmtNum(totals[i]) }));
+      }
+    });
+    if (maxTotal === 0) {
+      svg.appendChild(el("svg:text", { class: "label", x: padL + plotW / 2, y: padT + plotH / 2, "text-anchor": "middle", text: "この期間はありません" }));
+    }
+
+    attachDayCursor(svg, {
+      n,
+      left: padL,
+      top: padT,
+      width: plotW,
+      height: plotH + padB,
+      xAt,
+      indexAt: (px) => Math.floor((px - padL) / slot),
+      render: (i) => {
+        highlight.setAttribute("x", padL + i * slot);
+        highlight.style.display = "";
+        const rows = series.map((s) => tooltipRow(s.color, fmtNum(s.values[i]), s.app.name));
+        if (series.length > 1) rows.push(tooltipRow("transparent", fmtNum(totals[i]), "合計"));
+        return [el("div", { class: "tt-title", text: fmtFullDay(days[i]) }), ...rows];
+      },
+      reset: () => {
+        highlight.style.display = "none";
+      },
+    });
+    return svg;
+  }
+
+  // --- 累計ダウンロード数の推移 ---
+
+  function cumulativeChart(series, days) {
+    const m = metricLabel;
+    return chartFigure({
+      title: m("cumulative").name,
+      desc: m("cumulative").desc,
+      series,
+      lineKeys: true,
+      table: dayValuesTable(days, series, (i) => i === 0 || i === days.length - 1 || series.some((s) => s.values[i] !== s.values[i - 1]), false),
+      draw: (w) => drawTrend(series, days, w),
+    });
   }
 
   function drawTrend(series, days, W) {
@@ -636,17 +832,8 @@
     const yMax = ticks[ticks.length - 1];
     const yAt = (v) => padT + plotH - (v / yMax) * plotH;
 
-    const svg = el("svg:svg", { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: "img", tabindex: 0, "aria-label": "累計ダウンロード数の推移。左右キーで日付を移動できます" });
-
-    for (const v of ticks) {
-      const yy = yAt(v);
-      svg.appendChild(el("svg:line", { class: v === 0 ? "baseline" : "gridline", x1: padL, x2: padL + plotW, y1: yy, y2: yy }));
-      svg.appendChild(el("svg:text", { class: "tick", x: padL - 6, y: yy + 3, "text-anchor": "end", text: fmtNum(v) }));
-    }
-    for (const t of dayTicks(days)) {
-      const anchor = t.i === 0 ? "start" : t.i === last ? "end" : "middle";
-      svg.appendChild(el("svg:text", { class: "tick", x: xAt(t.i), y: H - 6, "text-anchor": anchor, text: t.label }));
-    }
+    const svg = el("svg:svg", { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "累計ダウンロード数の推移。左右キーで日付を移動できます" });
+    drawDayAxes(svg, { days, ticks, yAt, xAt, left: padL, right: padL + plotW, height: H });
 
     for (const s of series) {
       const points = s.values.map((v, i) => `${xAt(i).toFixed(1)},${yAt(v).toFixed(1)}`).join(" ");
@@ -677,70 +864,52 @@
     });
     svg.appendChild(cross);
 
-    let current = -1;
-    const show = (i, clientX, clientY) => {
-      current = Math.max(0, Math.min(last, i));
-      const x = xAt(current);
-      vline.setAttribute("x1", x);
-      vline.setAttribute("x2", x);
-      series.forEach((s, k) => {
-        dots[k].setAttribute("cx", x);
-        dots[k].setAttribute("cy", yAt(s.values[current]));
-      });
-      cross.style.display = "";
-      const rows = series
-        .slice()
-        .sort((a, b) => b.values[current] - a.values[current])
-        .map((s) => tooltipRow(s.color, fmtNum(s.values[current]), s.app.name));
-      showTooltipAt(clientX, clientY, [el("div", { class: "tt-title", text: fmtFullDay(days[current]) }), ...rows]);
-    };
-    const hide = () => {
-      cross.style.display = "none";
-      hideTooltip();
-    };
-    const indexAt = (clientX) => {
-      const r = svg.getBoundingClientRect();
-      return Math.round(((clientX - r.left - padL) / plotW) * last);
-    };
-    const overlay = el("svg:rect", { class: "hit", x: padL, y: padT, width: plotW, height: plotH + padB });
-    overlay.addEventListener("pointermove", (ev) => show(indexAt(ev.clientX), ev.clientX, ev.clientY));
-    overlay.addEventListener("pointerleave", hide);
-    svg.appendChild(overlay);
-
-    // キーボード: フォーカスで最新日、左右キーで 1 日ずつ移動
-    const showAtCurrent = () => {
-      const r = svg.getBoundingClientRect();
-      show(current, r.left + xAt(current), r.top + padT + 8);
-    };
-    svg.addEventListener("focus", () => {
-      current = last;
-      showAtCurrent();
+    attachDayCursor(svg, {
+      n,
+      left: padL,
+      top: padT,
+      width: plotW,
+      height: plotH + padB,
+      xAt,
+      indexAt: (px) => Math.round(((px - padL) / plotW) * last),
+      render: (i) => {
+        const x = xAt(i);
+        vline.setAttribute("x1", x);
+        vline.setAttribute("x2", x);
+        series.forEach((s, k) => {
+          dots[k].setAttribute("cx", x);
+          dots[k].setAttribute("cy", yAt(s.values[i]));
+        });
+        cross.style.display = "";
+        const rows = series
+          .slice()
+          .sort((a, b) => b.values[i] - a.values[i])
+          .map((s) => tooltipRow(s.color, fmtNum(s.values[i]), s.app.name));
+        return [el("div", { class: "tt-title", text: fmtFullDay(days[i]) }), ...rows];
+      },
+      reset: () => {
+        cross.style.display = "none";
+      },
     });
-    svg.addEventListener("keydown", (ev) => {
-      if (ev.key !== "ArrowLeft" && ev.key !== "ArrowRight") return;
-      ev.preventDefault();
-      current = Math.max(0, Math.min(last, current + (ev.key === "ArrowLeft" ? -1 : 1)));
-      showAtCurrent();
-    });
-    svg.addEventListener("blur", hide);
     return svg;
   }
 
-  /** 推移の表: 新規があった日（と集計日）の累計 */
-  function trendTable(series, days) {
-    const last = days.length - 1;
+  /** グラフの表表示: include(i) が真の日を新しい順に。withTotal で合計列を付ける */
+  function dayValuesTable(days, series, include, withTotal) {
+    const columns = series.length + 1 + (withTotal ? 1 : 0);
     const rows = [];
     days.forEach((day, i) => {
-      const changed = i === 0 || i === last || series.some((s) => s.values[i] !== s.values[i - 1]);
-      if (!changed) return;
-      rows.push(el("tr", {}, [el("td", { text: day }), ...series.map((s) => el("td", { text: fmtNum(s.values[i]) }))]));
+      if (!include(i)) return;
+      const cells = series.map((s) => el("td", { text: fmtNum(s.values[i]) }));
+      if (withTotal) cells.push(el("td", { text: fmtNum(series.reduce((sum, s) => sum + s.values[i], 0)) }));
+      rows.push(el("tr", {}, [el("td", { text: day }), ...cells]));
     });
     rows.reverse();
+    if (rows.length === 0) rows.push(el("tr", {}, [el("td", { colspan: columns, text: "この期間はありません" })]));
+    const head = [el("th", { text: "日付" }), ...series.map((s) => el("th", { text: s.app.name }))];
+    if (withTotal) head.push(el("th", { text: "合計" }));
     return el("div", { class: "chart-table-wrap" }, [
-      el("table", { class: "chart-table" }, [
-        el("thead", {}, [el("tr", {}, [el("th", { text: "日付" }), ...series.map((s) => el("th", { text: s.app.name }))])]),
-        el("tbody", {}, rows),
-      ]),
+      el("table", { class: "chart-table" }, [el("thead", {}, [el("tr", {}, head)]), el("tbody", {}, rows)]),
     ]);
   }
 
@@ -842,17 +1011,29 @@
     return section;
   }
 
-  /** 新規利用開始の日別推移と、利用者を数えた根拠（どのコンテナの何の項目か）。 */
+  /** 直近 30 日の日別のダウンロード数・利用者数と、利用者を数えた根拠（どのコンテナの何の項目か）。 */
   function renderUserTrend(app) {
     const u = app.users;
     const sources = (u.sources || [])
       .slice()
       .sort((a, b) => b.users - a.users)
-      .map((s) => `${containerLabel(app.key, s.container).name}（${s.container}.${s.field}）${fmtNum(s.users)}`);
-    const counts = new Map((u.newByDay || []).map((d) => [d.day, d.count]));
-    const daily = dayRange(generatedDay(), 30).map((day) => ({ day, count: counts.get(day) || 0 }));
+      .map((s) => {
+        const name = containerLabel(app.key, s.container).name;
+        const label = s.array ? `${name}の${arrayLabel(app.key, s.array)}` : name;
+        const raw = [s.container, s.array, s.field].filter(Boolean).join(".");
+        return `${label}（${raw}）${fmtNum(s.users)}${s.truncated ? "・上限で打ち切り" : ""}`;
+      });
+    const days = dayRange(generatedDay(), 30);
+    const daily = (points) => {
+      const counts = new Map((points || []).map((d) => [d.day, d.count]));
+      return days.map((day) => ({ day, count: counts.get(day) || 0 }));
+    };
+    const m = metricLabel;
     return el("div", { class: "user-trend" }, [
-      barChart(daily, "新しく使い始めた端末・アカウント（日別・日本時間）"),
+      el("div", { class: "user-trend-charts" }, [
+        barChart(daily(u.newByDay), `${m("dailyNew").name}（直近 30 日）`),
+        barChart(daily(u.activeByDay), `${m("dailyActive").name}（直近 30 日）`),
+      ]),
       el("p", { class: "hint", text: `利用者の数え方: ${sources.join(" / ")} を名寄せ。最初の記録 ${fmtDateTime(u.firstSeenAt)}` }),
     ]);
   }

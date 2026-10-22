@@ -20,6 +20,15 @@ window.OGS_DASHBOARD_LABELS = {
     },
     activeUsers: { name: "利用者数（アクティブ）", desc: "その期間にデータを作成・更新した端末・アカウントの数" },
     lastActive: { name: "最終利用", desc: "いずれかの利用者が最後にデータを作成・更新した日時" },
+    dailyNew: { name: "日別のダウンロード数（推定）", desc: "その日（日本時間）に初めてサーバーに記録された端末・アカウントの数" },
+    dailyActive: {
+      name: "日別の利用者数",
+      desc: "その日（日本時間）にデータを作成・更新した端末・アカウントの数。見るだけの日は数えられない",
+    },
+    cumulative: {
+      name: "累計ダウンロード数（推定）の推移",
+      desc: "サーバーに記録された端末・アカウントの累計。期間の初日はそれまでの累計から始まる",
+    },
     arrayTotal: { name: "件数", desc: "1 件のデータの中に埋め込まれている配列要素の合計" },
     blobCount: { name: "ファイル数", desc: "Blob Storage に保存されているファイルの数" },
     blobBytes: { name: "容量", desc: "ファイルの合計サイズ" },
